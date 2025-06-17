@@ -5,22 +5,16 @@ import * as React from "react";
 import type { Category } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { RotateCw, PlusCircle, Search, Filter as FilterIcon } from "lucide-react"; // Renamed Filter to FilterIcon
+import { RotateCw, PlusCircle, Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CategoryForm } from "@/components/categories/category-form";
 import { CategoryList } from "@/components/categories/category-list";
 import { addCategoryAction, updateCategoryAction, deleteCategoryAction } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CategoriesPageClientProps {
   initialCategories: Category[];
@@ -33,7 +27,7 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [filterType, setFilterType] = React.useState<"all" | "income" | "expense" | "general">("all");
+  const [currentTab, setCurrentTab] = React.useState<"all" | "income" | "expense" | "general">("all");
   const [categoryToDelete, setCategoryToDelete] = React.useState<Category | null>(null);
 
 
@@ -106,22 +100,24 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
     }
   };
 
-  const filteredCategories = React.useMemo(() => {
+  const displayedCategories = React.useMemo(() => {
     return categories.filter(category => {
       const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = filterType === "all" || category.type === filterType;
+      const matchesType = currentTab === "all" || category.type === currentTab;
       return matchesSearch && matchesType;
     });
-  }, [categories, searchTerm, filterType]);
+  }, [categories, searchTerm, currentTab]);
 
   return (
     <div className="space-y-4">
-      <Card className="shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-y-2">
-          <div>
-            <CardTitle>Manage Categories</CardTitle>
-            <CardDescription>View, add, or edit your custom transaction categories.</CardDescription>
-          </div>
+      <Tabs defaultValue="all" onValueChange={(value) => setCurrentTab(value as any)} className="space-y-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap px-4 sm:px-0">
+          <TabsList>
+            <TabsTrigger value="all">All Types</TabsTrigger>
+            <TabsTrigger value="income">Income</TabsTrigger>
+            <TabsTrigger value="expense">Expense</TabsTrigger>
+            <TabsTrigger value="general">General</TabsTrigger>
+          </TabsList>
           <div className="flex items-center gap-2">
              <Button variant="outline" size="icon" onClick={handleCategoryUpdate} aria-label="Refresh categories">
                 <RotateCw className="h-4 w-4"/>
@@ -130,42 +126,59 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
               <PlusCircle className="mr-2 h-4 w-4" /> Add Category
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-            <div className="relative w-full md:flex-grow">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="Search by category name..." 
-                className="pl-10 w-full"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2 w-full md:w-auto">
-               <Select value={filterType} onValueChange={(value) => setFilterType(value as any)}>
-                <SelectTrigger className="w-full md:w-[180px]" aria-label="Filter by type">
-                  <FilterIcon className="h-4 w-4 mr-2 inline-block" />
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="general">General</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <CategoryList 
-            categories={filteredCategories} 
-            onEditCategory={handleOpenEditForm}
-            onDeleteCategory={confirmDeleteCategory}
-            onCategoryUpdate={handleCategoryUpdate} 
-          />
-        </CardContent>
-      </Card>
+        </div>
+        
+        <div className="px-4 sm:px-0">
+          <Card className="shadow-lg">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+                <div className="relative w-full md:flex-grow">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input 
+                    type="search" 
+                    placeholder="Search by category name..." 
+                    className="pl-10 w-full"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <TabsContent value="all" className="mt-0">
+                <CategoryList 
+                  categories={displayedCategories} 
+                  onEditCategory={handleOpenEditForm}
+                  onDeleteCategory={confirmDeleteCategory}
+                  onCategoryUpdate={handleCategoryUpdate} 
+                />
+              </TabsContent>
+              <TabsContent value="income" className="mt-0">
+                <CategoryList 
+                  categories={displayedCategories}
+                  onEditCategory={handleOpenEditForm}
+                  onDeleteCategory={confirmDeleteCategory}
+                  onCategoryUpdate={handleCategoryUpdate} 
+                />
+              </TabsContent>
+              <TabsContent value="expense" className="mt-0">
+                <CategoryList 
+                  categories={displayedCategories}
+                  onEditCategory={handleOpenEditForm}
+                  onDeleteCategory={confirmDeleteCategory}
+                  onCategoryUpdate={handleCategoryUpdate} 
+                />
+              </TabsContent>
+              <TabsContent value="general" className="mt-0">
+                <CategoryList 
+                  categories={displayedCategories}
+                  onEditCategory={handleOpenEditForm}
+                  onDeleteCategory={confirmDeleteCategory}
+                  onCategoryUpdate={handleCategoryUpdate} 
+                />
+              </TabsContent>
+            </CardContent>
+          </Card>
+        </div>
+      </Tabs>
 
       <Dialog open={isFormOpen} onOpenChange={(open) => {
         setIsFormOpen(open);
@@ -215,3 +228,4 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
     </div>
   );
 }
+
