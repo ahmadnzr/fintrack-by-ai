@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -156,14 +157,17 @@ const SidebarProvider = React.forwardRef<
 )
 SidebarProvider.displayName = "SidebarProvider"
 
-const Sidebar = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    side?: "left" | "right"
-    variant?: "sidebar" | "floating" | "inset"
-    collapsible?: "offcanvas" | "icon" | "none"
-  }
->(
+interface CustomSidebarProps {
+  side?: "left" | "right";
+  variant?: "sidebar" | "floating" | "inset";
+  collapsible?: "offcanvas" | "icon" | "none";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+type SidebarProps = Omit<React.ComponentProps<"div">, keyof CustomSidebarProps> & CustomSidebarProps;
+
+const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
   (
     {
       side = "left",
@@ -171,7 +175,9 @@ const Sidebar = React.forwardRef<
       collapsible = "offcanvas",
       className,
       children,
-      ...props
+      open: _forwardedOpen, 
+      onOpenChange: _forwardedOnOpenChange,
+      ...rest
     },
     ref
   ) => {
@@ -185,7 +191,7 @@ const Sidebar = React.forwardRef<
             className
           )}
           ref={ref}
-          {...props}
+          {...rest}
         >
           {children}
         </div>
@@ -194,7 +200,7 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...rest}>
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
@@ -244,7 +250,7 @@ const Sidebar = React.forwardRef<
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
-          {...props}
+          {...rest}
         >
           <div
             data-sidebar="sidebar"
