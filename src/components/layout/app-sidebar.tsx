@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sidebar"; 
 import { APP_NAME } from "@/lib/constants";
 import { SheetTitle } from "@/components/ui/sheet";
+import React, { useEffect, useState } from "react"; // Added useEffect, useState
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -35,13 +36,18 @@ const navItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { isMobile } = useSidebar(); 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <Sidebar side="left" collapsible="icon" variant="sidebar">
       <SidebarHeader className="p-4">
         <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
           <DollarSign className="h-8 w-8 text-primary group-data-[state=expanded]:text-sidebar-primary" />
-          {isMobile ? (
+          {mounted && isMobile ? (
             <SheetTitle asChild>
               <h1 className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
                 {APP_NAME}
@@ -91,4 +97,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
