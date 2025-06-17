@@ -1,10 +1,11 @@
+
 "use client";
 
 import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, PlusCircle, Tag } from "lucide-react";
+import { Edit, Trash2, PlusCircle, Tag } from "lucide-react"; // Tag is used as a default
 import type { Category } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CategoryForm } from "./category-form";
@@ -12,6 +13,7 @@ import { deleteCategoryAction, addCategoryAction, updateCategoryAction } from "@
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getIconComponent } from "@/lib/icon-map";
 
 
 interface CategoryListProps {
@@ -53,6 +55,7 @@ export function CategoryList({ categories, onCategoryUpdate }: CategoryListProps
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('type', data.type);
+    // Note: Icon selection is not part of this form yet. If it were, it would submit an icon string.
     
     let result;
     if (editingCategory) {
@@ -97,62 +100,65 @@ export function CategoryList({ categories, onCategoryUpdate }: CategoryListProps
           ) : (
             <ScrollArea className="h-[calc(100vh-20rem)] pr-4"> {/* Adjust height as needed */}
               <ul className="space-y-3">
-                {categories.map((category) => (
-                  <li
-                    key={category.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      {category.icon ? <category.icon className="h-5 w-5 text-muted-foreground" /> : <Tag className="h-5 w-5 text-muted-foreground" />}
-                      <span className="font-medium">{category.name}</span>
-                      <Badge variant="outline" className={getTypeColor(category.type)}>
-                        {category.type.charAt(0).toUpperCase() + category.type.slice(1)}
-                      </Badge>
-                      {!category.isCustom && <Badge variant="secondary">Predefined</Badge>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(category)}
-                        disabled={!category.isCustom}
-                        aria-label={`Edit category ${category.name}`}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={!category.isCustom}
-                            aria-label={`Delete category ${category.name}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the category "{category.name}".
-                              Transactions using this category will not be affected but might need re-categorization.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(category.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                {categories.map((category) => {
+                  const IconComponent = getIconComponent(category.icon);
+                  return (
+                    <li
+                      key={category.id}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <IconComponent className="h-5 w-5 text-muted-foreground" />
+                        <span className="font-medium">{category.name}</span>
+                        <Badge variant="outline" className={getTypeColor(category.type)}>
+                          {category.type.charAt(0).toUpperCase() + category.type.slice(1)}
+                        </Badge>
+                        {!category.isCustom && <Badge variant="secondary">Predefined</Badge>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(category)}
+                          disabled={!category.isCustom}
+                          aria-label={`Edit category ${category.name}`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={!category.isCustom}
+                              aria-label={`Delete category ${category.name}`}
                             >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </li>
-                ))}
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the category "{category.name}".
+                                Transactions using this category will not be affected but might need re-categorization.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(category.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </ScrollArea>
           )}

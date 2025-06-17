@@ -1,3 +1,4 @@
+
 export type TransactionType = 'income' | 'expense';
 
 export interface Transaction {
@@ -16,7 +17,7 @@ export interface Category {
   name: string;
   type: TransactionType | 'general'; // 'general' if category can apply to both
   isCustom: boolean;
-  icon?: React.ElementType; // Optional: for displaying icons next to categories
+  icon?: string; // Changed from React.ElementType to string
 }
 
 export type FinancialInsightParams = {
