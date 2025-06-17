@@ -20,9 +20,9 @@ export function PaginationControls({
   itemsPerPage,
   totalItems,
 }: PaginationControlsProps) {
-  if (totalPages <= 1) {
-    return null;
-  }
+  // Removed: if (totalPages <= 1) { return null; }
+  // The parent component already ensures this component is only rendered if totalItems > 0,
+  // which means totalPages will be at least 1.
 
   const handlePrevious = () => {
     if (currentPage > 1) {
@@ -76,3 +76,4 @@ export function PaginationControls({
     </div>
   );
 }
+
