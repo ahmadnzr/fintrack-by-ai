@@ -36,7 +36,7 @@ export function AppSidebar() {
   const { open, setOpen } = useSidebar();
 
   return (
-    <Sidebar side="left" collapsible="icon" variant="sidebar" open={open} onOpenChange={setOpen}>
+    <Sidebar side="left" collapsible="icon" variant="sidebar">
       <SidebarHeader className="p-4">
         <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
           <DollarSign className="h-8 w-8 text-primary group-data-[state=expanded]:text-sidebar-primary" />
@@ -51,15 +51,13 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.href}>
               <Link href={item.href}>
                 <SidebarMenuButton
-                  asChild
                   isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))}
                   tooltip={item.label}
                   className="justify-start"
                 >
-                  <>
-                    <item.icon className="h-5 w-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                  </>
+                  {/* Removed asChild, SidebarMenuButton will render as a button */}
+                  <item.icon className="h-5 w-5" />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
