@@ -20,10 +20,9 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  useSidebar, // Import useSidebar
+  useSidebar, 
 } from "@/components/ui/sidebar"; 
 import { APP_NAME } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
 import { SheetTitle } from "@/components/ui/sheet";
 
 const navItems = [
@@ -35,7 +34,7 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isMobile } = useSidebar(); // Get isMobile from context
+  const { isMobile } = useSidebar(); 
 
   return (
     <Sidebar side="left" collapsible="icon" variant="sidebar">
@@ -53,30 +52,45 @@ export function AppSidebar() {
           )}
         </Link>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="p-2">
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href}>
+              <Link href={item.href} passHref legacyBehavior>
                 <SidebarMenuButton
+                  asChild
                   isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))}
                   tooltip={item.label}
                   className="justify-start"
                 >
-                  <item.icon className="h-5 w-5" />
-                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                  <a>
+                    <item.icon className="h-5 w-5" />
+                    <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                  </a>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="p-2 group-data-[collapsible=icon]:items-center">
-         {/* Placeholder for settings or user profile */}
-        <Button variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:justify-center">
-            <Settings className="h-5 w-5" />
-            <span className="group-data-[collapsible=icon]:hidden ml-2">Settings</span>
-        </Button>
+      <SidebarFooter className="p-2 mt-auto border-t border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <Link href="/settings" passHref legacyBehavior>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/settings"}
+                tooltip="Settings"
+                className="justify-start"
+              >
+                <a>
+                  <Settings className="h-5 w-5" />
+                  <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                </a>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
