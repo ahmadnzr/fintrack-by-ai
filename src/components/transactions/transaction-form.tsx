@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -59,19 +60,22 @@ interface ActionResponseServer {
 export function TransactionForm({ transaction, categories, onSubmit, onCancel, formType }: TransactionFormProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
-  const defaultValues: Partial<TransactionFormValues> = transaction
+  const defaultValues: TransactionFormValues = transaction
     ? {
         date: new Date(transaction.date),
         description: transaction.description,
         amount: transaction.amount,
-        category: transaction.category, // Assuming category is string name. Adjust if it's ID.
+        category: transaction.category, 
         type: transaction.type,
         attachmentUrl: transaction.attachmentUrl || '',
         tags: transaction.tags?.join(", ") || '',
       }
     : {
         date: new Date(),
-        type: "expense", // Default to expense
+        description: '', // Initialize
+        amount: 0, // Initialize (validation will require positive)
+        category: '', // Initialize
+        type: "expense", 
         attachmentUrl: '',
         tags: '',
       };
@@ -89,9 +93,9 @@ export function TransactionForm({ transaction, categories, onSubmit, onCancel, f
 
   React.useEffect(() => {
     // Reset category if it's not valid for the new type
-    const currentCategory = form.getValues("category");
-    if (currentCategory && !filteredCategories.find(cat => cat.name === currentCategory)) {
-      form.setValue("category", "");
+    const currentCategoryValue = form.getValues("category");
+    if (currentCategoryValue && !filteredCategories.find(cat => cat.name === currentCategoryValue)) {
+      form.setValue("category", ""); 
     }
   }, [selectedType, filteredCategories, form]);
 
@@ -101,7 +105,7 @@ export function TransactionForm({ transaction, categories, onSubmit, onCancel, f
     const result = await onSubmit(data);
     setIsSubmitting(false);
     if (result.success) {
-      form.reset(); // Reset form on success
+      form.reset(); 
     } else if (result.error && typeof result.error !== 'string') {
        Object.keys(result.error).forEach(key => {
         if (key !== '_form') {
@@ -135,7 +139,9 @@ export function TransactionForm({ transaction, categories, onSubmit, onCancel, f
               <FormItem>
                 <FormLabel>Amount</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                  <Input type="number" step="0.01" placeholder="0.00" {...field} 
+                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)} // Ensure value is number
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -187,7 +193,7 @@ export function TransactionForm({ transaction, categories, onSubmit, onCancel, f
                 <FormLabel>Type</FormLabel>
                 <Select onValueChange={(value) => {
                   field.onChange(value);
-                  form.setValue("category", ""); // Reset category when type changes
+                  form.setValue("category", ""); 
                 }} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -219,7 +225,7 @@ export function TransactionForm({ transaction, categories, onSubmit, onCancel, f
                 </FormControl>
                 <SelectContent>
                   {filteredCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.name}> {/* Assuming using category name for value */}
+                    <SelectItem key={cat.id} value={cat.name}> 
                       {cat.name}
                     </SelectItem>
                   ))}
@@ -278,3 +284,4 @@ export function TransactionForm({ transaction, categories, onSubmit, onCancel, f
     </Form>
   );
 }
+
