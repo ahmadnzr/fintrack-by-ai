@@ -20,11 +20,11 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  useSidebar,
+  useSidebar, // Import useSidebar
 } from "@/components/ui/sidebar"; 
 import { APP_NAME } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { SheetTitle } from "@/components/ui/sheet"; // Import SheetTitle
+import { SheetTitle } from "@/components/ui/sheet";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -35,18 +35,22 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { open, setOpen } = useSidebar();
+  const { isMobile } = useSidebar(); // Get isMobile from context
 
   return (
     <Sidebar side="left" collapsible="icon" variant="sidebar">
       <SidebarHeader className="p-4">
         <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
           <DollarSign className="h-8 w-8 text-primary group-data-[state=expanded]:text-sidebar-primary" />
-          <SheetTitle asChild>
+          {isMobile ? (
+            <SheetTitle className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+              {APP_NAME}
+            </SheetTitle>
+          ) : (
             <h1 className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
               {APP_NAME}
             </h1>
-          </SheetTitle>
+          )}
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -77,4 +81,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
