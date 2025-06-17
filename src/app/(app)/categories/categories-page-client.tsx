@@ -159,7 +159,7 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
         </div>
         
         <div className="px-4 sm:px-0">
-          <Card className="shadow-lg">
+          <Card className="shadow-lg overflow-hidden">
             <CardContent className="p-4 md:p-6">
               <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
                 <div className="relative w-full md:flex-grow">
