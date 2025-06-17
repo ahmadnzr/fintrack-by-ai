@@ -2,10 +2,24 @@
 "use client";
 
 import * as React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, PlusCircle, Tag } from "lucide-react"; // Tag is used as a default
+import { Edit, Trash2, PlusCircle, Tag, MoreHorizontal } from "lucide-react";
 import type { Category } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CategoryForm } from "./category-form";
@@ -14,7 +28,6 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getIconComponent } from "@/lib/icon-map";
-
 
 interface CategoryListProps {
   categories: Category[];
@@ -55,7 +68,8 @@ export function CategoryList({ categories, onCategoryUpdate }: CategoryListProps
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('type', data.type);
-    // Note: Icon selection is not part of this form yet. If it were, it would submit an icon string.
+    // Icon selection would be handled here if added to the form
+    // formData.append('icon', data.icon); 
     
     let result;
     if (editingCategory) {
@@ -76,11 +90,16 @@ export function CategoryList({ categories, onCategoryUpdate }: CategoryListProps
     }
   };
   
-  const getTypeColor = (type: Category['type']) => {
-    if (type === 'income') return 'bg-green-100 text-green-700 border-green-300';
-    if (type === 'expense') return 'bg-red-100 text-red-700 border-red-300';
-    return 'bg-blue-100 text-blue-700 border-blue-300'; // General
-  }
+  const getTypeBadgeStyle = (type: Category['type']) => {
+    switch (type) {
+      case 'income':
+        return 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200';
+      case 'expense':
+        return 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200';
+      default: // general
+        return 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200';
+    }
+  };
 
   return (
     <>
@@ -95,73 +114,96 @@ export function CategoryList({ categories, onCategoryUpdate }: CategoryListProps
           </Button>
         </CardHeader>
         <CardContent>
-          {categories.length === 0 ? (
-             <p className="text-muted-foreground text-center py-8">No categories found. Add your first custom category!</p>
-          ) : (
-            <ScrollArea className="h-[calc(100vh-20rem)] pr-4"> {/* Adjust height as needed */}
-              <ul className="space-y-3">
-                {categories.map((category) => {
-                  const IconComponent = getIconComponent(category.icon);
-                  return (
-                    <li
-                      key={category.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <IconComponent className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-medium">{category.name}</span>
-                        <Badge variant="outline" className={getTypeColor(category.type)}>
-                          {category.type.charAt(0).toUpperCase() + category.type.slice(1)}
-                        </Badge>
-                        {!category.isCustom && <Badge variant="secondary">Predefined</Badge>}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(category)}
-                          disabled={!category.isCustom}
-                          aria-label={`Edit category ${category.name}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={!category.isCustom}
-                              aria-label={`Delete category ${category.name}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the category "{category.name}".
-                                Transactions using this category will not be affected but might need re-categorization.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(category.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </ScrollArea>
-          )}
+          <ScrollArea className="h-[calc(100vh-22rem)]"> {/* Adjust height as needed */}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]">Icon</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {categories.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">
+                      No categories found. Add your first custom category!
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  categories.map((category) => {
+                    const IconComponent = getIconComponent(category.icon);
+                    return (
+                      <TableRow key={category.id}>
+                        <TableCell>
+                          <IconComponent className="h-5 w-5 text-muted-foreground" />
+                        </TableCell>
+                        <TableCell className="font-medium">{category.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getTypeBadgeStyle(category.type)}>
+                            {category.type.charAt(0).toUpperCase() + category.type.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {category.isCustom ? (
+                            <Badge variant="secondary">Custom</Badge>
+                          ) : (
+                            <Badge variant="outline">Predefined</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={!category.isCustom}>
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Category actions for {category.name}</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEdit(category)} disabled={!category.isCustom}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                   <DropdownMenuItem 
+                                      onSelect={(e) => e.preventDefault()} 
+                                      disabled={!category.isCustom}
+                                      className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    >
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This action cannot be undone. This will permanently delete the category "{category.name}".
+                                      Transactions using this category will not be affected but might need re-categorization.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDelete(category.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </CardContent>
       </Card>
 
