@@ -1,3 +1,4 @@
+
 import { AppHeader } from "@/components/layout/app-header";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { IncomeExpenseChart } from "@/components/dashboard/income-expense-chart";
@@ -11,6 +12,15 @@ import { PlusCircle } from "lucide-react";
 export default async function DashboardPage() {
   const transactions = await getAllTransactions();
 
+  const today = new Date();
+  const reportDateISO = today.toISOString();
+
+  const twelveMonthsAgo = new Date(today);
+  twelveMonthsAgo.setMonth(today.getMonth() - 11);
+  twelveMonthsAgo.setDate(1);
+  twelveMonthsAgo.setHours(0, 0, 0, 0);
+  const filterStartTwelveMonthsISO = twelveMonthsAgo.toISOString();
+
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <AppHeader title="Dashboard" />
@@ -18,10 +28,10 @@ export default async function DashboardPage() {
         <SummaryCards transactions={transactions} />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="shadow-lg col-span-1 lg:col-span-4">
-                <IncomeExpenseChart transactions={transactions} />
+                <IncomeExpenseChart transactions={transactions} filterStartDateISO={filterStartTwelveMonthsISO} />
             </Card>
             <Card className="shadow-lg col-span-1 lg:col-span-3">
-                 <ExpenseCategoryChart transactions={transactions} />
+                 <ExpenseCategoryChart transactions={transactions} reportDateISO={reportDateISO} />
             </Card>
         </div>
         {transactions.length === 0 && (

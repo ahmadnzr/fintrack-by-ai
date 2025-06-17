@@ -1,12 +1,14 @@
+
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Transaction } from "@/lib/types";
-import { format, getMonth, getYear, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 interface IncomeExpenseChartProps {
   transactions: Transaction[];
+  filterStartDateISO: string;
 }
 
 interface MonthlyData {
@@ -15,20 +17,16 @@ interface MonthlyData {
   expenses: number;
 }
 
-export function IncomeExpenseChart({ transactions }: IncomeExpenseChartProps) {
+export function IncomeExpenseChart({ transactions, filterStartDateISO }: IncomeExpenseChartProps) {
+  const filterStartDate = parseISO(filterStartDateISO);
+  
   const processDataForChart = (data: Transaction[]): MonthlyData[] => {
     const monthlyTotals: { [key: string]: { income: number; expenses: number } } = {};
 
-    // Consider transactions from the last 12 months
-    const twelveMonthsAgo = new Date();
-    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11); // Go back 11 months to include current month
-    twelveMonthsAgo.setDate(1);
-    twelveMonthsAgo.setHours(0,0,0,0);
-
-
     data.forEach((transaction) => {
       const transactionDate = parseISO(transaction.date);
-      if (transactionDate < twelveMonthsAgo) return;
+      // Filter transactions to be on or after the filterStartDate
+      if (transactionDate < filterStartDate) return;
 
       const monthYear = format(transactionDate, 'MMM yy');
       if (!monthlyTotals[monthYear]) {
@@ -44,11 +42,13 @@ export function IncomeExpenseChart({ transactions }: IncomeExpenseChartProps) {
     const sortedMonths = Object.keys(monthlyTotals).sort((a, b) => {
       const [monthA, yearA] = a.split(' ');
       const [monthB, yearB] = b.split(' ');
-      const dateA = new Date(`01 ${monthA} ${yearA}`);
-      const dateB = new Date(`01 ${monthB} ${yearB}`);
+      // Ensure year is parsed as full year for correct sorting if 'yy' is e.g. '99' vs '00'
+      const fullYearA = parseInt(yearA) < 70 ? `20${yearA}` : `19${yearA}`; // simple heuristic for 2-digit years
+      const fullYearB = parseInt(yearB) < 70 ? `20${yearB}` : `19${yearB}`;
+      const dateA = new Date(`01 ${monthA} ${fullYearA}`);
+      const dateB = new Date(`01 ${monthB} ${fullYearB}`);
       return dateA.getTime() - dateB.getTime();
     });
-
 
     return sortedMonths.map(month => ({
       month,
@@ -64,7 +64,7 @@ export function IncomeExpenseChart({ transactions }: IncomeExpenseChartProps) {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Income vs. Expenses (Last 12 Months)</CardTitle>
-          <CardDescription>No data available for the last 12 months.</CardDescription>
+          <CardDescription>No data available for the selected period.</CardDescription>
         </CardHeader>
         <CardContent className="h-[350px] flex items-center justify-center">
           <p className="text-muted-foreground">Please add transactions to see the chart.</p>

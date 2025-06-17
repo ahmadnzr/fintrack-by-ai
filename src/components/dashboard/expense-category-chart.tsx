@@ -1,12 +1,14 @@
+
 "use client";
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Transaction } from "@/lib/types";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 interface ExpenseCategoryChartProps {
   transactions: Transaction[];
+  reportDateISO: string;
 }
 
 interface CategoryData {
@@ -25,15 +27,16 @@ const COLORS = [
   "hsl(60, 70%, 50%)",
 ];
 
-export function ExpenseCategoryChart({ transactions }: ExpenseCategoryChartProps) {
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+export function ExpenseCategoryChart({ transactions, reportDateISO }: ExpenseCategoryChartProps) {
+  const reportDate = parseISO(reportDateISO);
+  const currentMonth = reportDate.getMonth();
+  const currentYear = reportDate.getFullYear();
 
   const processDataForChart = (data: Transaction[]): CategoryData[] => {
     const categoryTotals: { [key: string]: number } = {};
     data
       .filter((t) => {
-        const transactionDate = new Date(t.date);
+        const transactionDate = parseISO(t.date);
         return t.type === "expense" && transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
       })
       .forEach((transaction) => {
@@ -46,13 +49,14 @@ export function ExpenseCategoryChart({ transactions }: ExpenseCategoryChartProps
   };
 
   const chartData = processDataForChart(transactions);
+  const monthYearDisplay = format(reportDate, 'MMMM yyyy');
 
   if (chartData.length === 0) {
     return (
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>Expense Categories (This Month)</CardTitle>
-          <CardDescription>No expense data available for this month.</CardDescription>
+          <CardTitle>Expense Categories ({monthYearDisplay})</CardTitle>
+          <CardDescription>No expense data available for {monthYearDisplay}.</CardDescription>
         </CardHeader>
         <CardContent className="h-[350px] flex items-center justify-center">
           <p className="text-muted-foreground">Add expenses to see the category breakdown.</p>
@@ -64,8 +68,8 @@ export function ExpenseCategoryChart({ transactions }: ExpenseCategoryChartProps
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle>Expense Categories (This Month)</CardTitle>
-        <CardDescription>Breakdown of expenses by category for {format(new Date(currentYear, currentMonth), 'MMMM yyyy')}.</CardDescription>
+        <CardTitle>Expense Categories ({monthYearDisplay})</CardTitle>
+        <CardDescription>Breakdown of expenses by category for {monthYearDisplay}.</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
