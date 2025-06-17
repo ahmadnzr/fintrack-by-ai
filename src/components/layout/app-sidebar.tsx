@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -20,9 +21,10 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   useSidebar,
-} from "@/components/ui/sidebar"; // Assuming this path is correct from ShadCN/UI
+} from "@/components/ui/sidebar"; 
 import { APP_NAME } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { SheetTitle } from "@/components/ui/sheet"; // Import SheetTitle
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -40,9 +42,11 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
           <DollarSign className="h-8 w-8 text-primary group-data-[state=expanded]:text-sidebar-primary" />
-          <h1 className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-            {APP_NAME}
-          </h1>
+          <SheetTitle asChild>
+            <h1 className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+              {APP_NAME}
+            </h1>
+          </SheetTitle>
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -55,7 +59,6 @@ export function AppSidebar() {
                   tooltip={item.label}
                   className="justify-start"
                 >
-                  {/* Removed asChild, SidebarMenuButton will render as a button */}
                   <item.icon className="h-5 w-5" />
                   <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                 </SidebarMenuButton>
@@ -74,3 +77,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
