@@ -6,7 +6,7 @@ import type { Category } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { RotateCw, PlusCircle, Search, Filter } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -22,10 +22,13 @@ import { addCategoryAction, updateCategoryAction, deleteCategoryAction } from "@
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PaginationControls } from "@/components/ui/pagination";
 
 interface CategoriesPageClientProps {
   initialCategories: Category[];
 }
+
+const ITEMS_PER_PAGE = 10;
 
 export function CategoriesPageClient({ initialCategories }: CategoriesPageClientProps) {
   const router = useRouter();
@@ -37,14 +40,17 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
   const [currentTab, setCurrentTab] = React.useState<"all" | "income" | "expense" | "general">("all");
   const [filterStatus, setFilterStatus] = React.useState<"all" | "predefined" | "custom">("all");
   const [categoryToDelete, setCategoryToDelete] = React.useState<Category | null>(null);
+  const [currentPage, setCurrentPage] = React.useState(1);
 
 
   React.useEffect(() => {
     setCategories(initialCategories);
+    setCurrentPage(1); 
   }, [initialCategories]);
 
   const handleCategoryUpdate = () => {
     router.refresh();
+    setCurrentPage(1);
   };
 
   const handleOpenAddForm = () => {
@@ -79,16 +85,15 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
     } else {
       toast({ variant: "destructive", title: "Error", description: result.error || "Failed to delete category." });
     }
-    setCategoryToDelete(null); // Close dialog
+    setCategoryToDelete(null); 
   };
 
 
-  const handleSubmitForm = async (data: any) => { // data type from CategoryFormValues
+  const handleSubmitForm = async (data: any) => { 
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('type', data.type);
-    // formData.append('icon', data.icon); // If icon selection is added to form
-
+    
     let result;
     if (editingCategory) {
       result = await updateCategoryAction(editingCategory.id, formData);
@@ -118,6 +123,20 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
       return matchesSearch && matchesType && matchesStatus;
     });
   }, [categories, searchTerm, currentTab, filterStatus]);
+
+  const totalPages = Math.ceil(displayedCategories.length / ITEMS_PER_PAGE);
+  const paginatedCategories = displayedCategories.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, currentTab, filterStatus]);
 
   return (
     <div className="space-y-4">
@@ -169,36 +188,41 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
               </div>
               <TabsContent value="all" className="mt-0">
                 <CategoryList 
-                  categories={displayedCategories} 
+                  categories={paginatedCategories} 
                   onEditCategory={handleOpenEditForm}
                   onDeleteCategory={confirmDeleteCategory}
-                  onCategoryUpdate={handleCategoryUpdate} 
                 />
               </TabsContent>
               <TabsContent value="income" className="mt-0">
                 <CategoryList 
-                  categories={displayedCategories}
+                  categories={paginatedCategories}
                   onEditCategory={handleOpenEditForm}
                   onDeleteCategory={confirmDeleteCategory}
-                  onCategoryUpdate={handleCategoryUpdate} 
                 />
               </TabsContent>
               <TabsContent value="expense" className="mt-0">
                 <CategoryList 
-                  categories={displayedCategories}
+                  categories={paginatedCategories}
                   onEditCategory={handleOpenEditForm}
                   onDeleteCategory={confirmDeleteCategory}
-                  onCategoryUpdate={handleCategoryUpdate} 
                 />
               </TabsContent>
               <TabsContent value="general" className="mt-0">
                 <CategoryList 
-                  categories={displayedCategories}
+                  categories={paginatedCategories}
                   onEditCategory={handleOpenEditForm}
                   onDeleteCategory={confirmDeleteCategory}
-                  onCategoryUpdate={handleCategoryUpdate} 
                 />
               </TabsContent>
+              {displayedCategories.length > 0 && (
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  totalItems={displayedCategories.length}
+                />
+              )}
             </CardContent>
           </Card>
         </div>
@@ -206,7 +230,7 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
 
       <Dialog open={isFormOpen} onOpenChange={(open) => {
         setIsFormOpen(open);
-        if (!open) setEditingCategory(null); // Reset editingCategory when dialog closes
+        if (!open) setEditingCategory(null); 
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

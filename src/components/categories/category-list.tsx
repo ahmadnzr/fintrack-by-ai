@@ -20,13 +20,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, MoreHorizontal } from "lucide-react";
 import type { Category } from "@/lib/types";
-import { AlertDialog, AlertDialogTrigger } from "@/components/ui/alert-dialog"; // Only Trigger needed here now
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { getIconComponent } from "@/lib/icon-map";
 
 interface CategoryListProps {
   categories: Category[];
-  onCategoryUpdate: () => void;
   onEditCategory: (category: Category) => void;
   onDeleteCategory: (category: Category) => void; 
 }
@@ -45,7 +42,7 @@ export function CategoryList({ categories, onEditCategory, onDeleteCategory }: C
   };
 
   return (
-    <ScrollArea className="h-[calc(100vh-26rem)] md:h-[calc(100vh-22rem)]"> {/* Adjusted height */}
+    <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -96,10 +93,9 @@ export function CategoryList({ categories, onEditCategory, onDeleteCategory }: C
                         <DropdownMenuItem onClick={() => onEditCategory(category)} disabled={!category.isCustom}>
                           <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
-                        {/* AlertDialogTrigger is now part of the parent, so we just call onDeleteCategory */}
                         <DropdownMenuItem 
                             onSelect={(e) => {
-                                e.preventDefault(); // Prevent menu from closing if parent handles dialog
+                                e.preventDefault(); 
                                 onDeleteCategory(category);
                             }}
                             disabled={!category.isCustom}
@@ -116,6 +112,6 @@ export function CategoryList({ categories, onEditCategory, onDeleteCategory }: C
           )}
         </TableBody>
       </Table>
-    </ScrollArea>
+    </div>
   );
 }

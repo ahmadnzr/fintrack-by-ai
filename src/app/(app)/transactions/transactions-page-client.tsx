@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -20,36 +21,37 @@ import { TransactionForm } from "@/components/transactions/transaction-form";
 import { addTransactionAction } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { PaginationControls } from "@/components/ui/pagination";
 
 interface TransactionsPageClientProps {
   initialTransactions: Transaction[];
   initialCategories: Category[];
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export function TransactionsPageClient({ initialTransactions, initialCategories }: TransactionsPageClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [transactions, setTransactions] = React.useState(initialTransactions);
-  const [categories] = React.useState(initialCategories); // Categories are less likely to change on this page
+  const [categories] = React.useState(initialCategories);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [filterType, setFilterType] = React.useState<"all" | "income" | "expense">("all");
   const [filterCategory, setFilterCategory] = React.useState<string>("all");
   const [currentTab, setCurrentTab] = React.useState<"all" | "income" | "expense">("all");
-
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   const handleTransactionUpdate = () => {
-    // This is a simple way to refresh data. In a real app, you might use SWR or React Query
-    // or re-fetch data from server actions that return the new list.
-    // For now, we'll just refresh the page to get latest data.
-    router.refresh(); 
+    router.refresh();
+    setCurrentPage(1); 
   };
 
   React.useEffect(() => {
-    setTransactions(initialTransactions); // Update local state if initialTransactions changes (e.g. after router.refresh)
+    setTransactions(initialTransactions);
+    setCurrentPage(1); // Reset to first page when initial transactions change
   }, [initialTransactions]);
 
-  const handleSubmitNewTransaction = async (data: any) => { // data type from TransactionFormValues
+  const handleSubmitNewTransaction = async (data: any) => {
     const formData = new FormData();
     formData.append('date', data.date.toISOString());
     formData.append('description', data.description);
@@ -85,9 +87,25 @@ export function TransactionsPageClient({ initialTransactions, initialCategories 
   
   const uniqueCategories = React.useMemo(() => {
     const catSet = new Set<string>();
-    transactions.forEach(t => catSet.add(t.category));
+    initialTransactions.forEach(t => catSet.add(t.category)); // Use initial to get all possible categories
     return Array.from(catSet).sort();
-  }, [transactions]);
+  }, [initialTransactions]);
+
+  const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+  
+  // Reset page to 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, currentTab, filterCategory]);
+
 
   return (
     <>
@@ -138,14 +156,23 @@ export function TransactionsPageClient({ initialTransactions, initialCategories 
                 </div>
               </div>
               <TabsContent value="all" className="mt-0">
-                <TransactionTable transactions={filteredTransactions} categories={categories} onTransactionUpdate={handleTransactionUpdate} />
+                <TransactionTable transactions={paginatedTransactions} categories={categories} onTransactionUpdate={handleTransactionUpdate} />
               </TabsContent>
               <TabsContent value="income" className="mt-0">
-                <TransactionTable transactions={filteredTransactions.filter(t => t.type === 'income')} categories={categories} onTransactionUpdate={handleTransactionUpdate} />
+                <TransactionTable transactions={paginatedTransactions} categories={categories} onTransactionUpdate={handleTransactionUpdate} />
               </TabsContent>
               <TabsContent value="expense" className="mt-0">
-                <TransactionTable transactions={filteredTransactions.filter(t => t.type === 'expense')} categories={categories} onTransactionUpdate={handleTransactionUpdate} />
+                <TransactionTable transactions={paginatedTransactions} categories={categories} onTransactionUpdate={handleTransactionUpdate} />
               </TabsContent>
+              {filteredTransactions.length > 0 && (
+                <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    totalItems={filteredTransactions.length}
+                />
+              )}
             </CardContent>
           </Card>
         </div>

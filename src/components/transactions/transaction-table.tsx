@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -29,7 +30,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 interface TransactionTableProps {
   transactions: Transaction[];
   categories: Category[];
-  onTransactionUpdate: () => void; // Callback to re-fetch/re-validate data
+  onTransactionUpdate: () => void; 
 }
 
 export function TransactionTable({ transactions, categories, onTransactionUpdate }: TransactionTableProps) {
@@ -40,11 +41,6 @@ export function TransactionTable({ transactions, categories, onTransactionUpdate
 
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
-    setIsFormOpen(true);
-  };
-
-  const handleAddNew = () => {
-    setEditingTransaction(null);
     setIsFormOpen(true);
   };
   
@@ -62,7 +58,7 @@ export function TransactionTable({ transactions, categories, onTransactionUpdate
     }
   };
 
-  const handleSubmitForm = async (data: any) => { // data type from TransactionFormValues
+  const handleSubmitForm = async (data: any) => {
     const formData = new FormData();
     formData.append('date', data.date.toISOString());
     formData.append('description', data.description);
@@ -76,7 +72,9 @@ export function TransactionTable({ transactions, categories, onTransactionUpdate
     if (editingTransaction) {
       result = await updateTransactionAction(editingTransaction.id, formData);
     } else {
-      result = await addTransactionAction(formData);
+      // This form is now only for editing, adding is handled by TransactionsPageClient's dialog
+      // but keeping the logic just in case it's used standalone or for future refactor.
+      result = await addTransactionAction(formData); 
     }
 
     if (result.success) {
@@ -98,88 +96,92 @@ export function TransactionTable({ transactions, categories, onTransactionUpdate
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.length === 0 ? (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="text-center h-24">
-                No transactions found.
-              </TableCell>
+              <TableHead>Date</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
-          ) : (
-            transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell>{format(new Date(transaction.date), "MMM dd, yyyy")}</TableCell>
-                <TableCell className="font-medium max-w-xs truncate">{transaction.description}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{transaction.category}</Badge>
-                </TableCell>
-                <TableCell className={`text-right font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={transaction.type === "income" ? "default" : "secondary"} 
-                         className={transaction.type === 'income' ? 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200' : 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200'}>
-                    {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Transaction actions</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewDetails(transaction)}>
-                        <Eye className="mr-2 h-4 w-4" /> View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEdit(transaction)}>
-                        <Edit className="mr-2 h-4 w-4" /> Edit
-                      </DropdownMenuItem>
-                       <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Delete
-                          </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete this transaction.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(transaction.id)}
-                              className={buttonVariants({variant: "destructive"})}
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+          </TableHeader>
+          <TableBody>
+            {transactions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center h-24">
+                  No transactions found matching your criteria.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell>{format(new Date(transaction.date), "MMM dd, yyyy")}</TableCell>
+                  <TableCell className="font-medium max-w-xs truncate">{transaction.description}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{transaction.category}</Badge>
+                  </TableCell>
+                  <TableCell className={`text-right font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={transaction.type === "income" ? "default" : "secondary"} 
+                           className={transaction.type === 'income' ? 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200' : 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200'}>
+                      {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Transaction actions</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewDetails(transaction)}>
+                          <Eye className="mr-2 h-4 w-4" /> View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(transaction)}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                         <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                             >
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete this transaction.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(transaction.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       <Dialog open={isFormOpen} onOpenChange={(open) => {
         setIsFormOpen(open);
@@ -245,10 +247,4 @@ export function TransactionTable({ transactions, categories, onTransactionUpdate
       </Dialog>
     </>
   );
-}
-
-// Helper for AlertDialog delete button styling
-const buttonVariants = ({ variant }: { variant: "destructive" | "default" }) => {
-  if (variant === "destructive") return "bg-destructive text-destructive-foreground hover:bg-destructive/90";
-  return "";
 }
