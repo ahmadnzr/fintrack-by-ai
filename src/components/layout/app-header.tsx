@@ -1,3 +1,4 @@
+
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -42,9 +43,11 @@ export function AppHeader({ title }: { title: string }) {
   };
   
   if (!mounted) {
+    // Return a basic header structure during server render / before hydration to avoid layout shift
+    // and ensure the trigger is present for structure, though it might not be interactive until client mounts.
     return (
       <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:py-4">
-        <SidebarTrigger className="sm:hidden" />
+        <SidebarTrigger /> 
         <h1 className="text-xl font-semibold md:text-2xl">{title}</h1>
          <div className="ml-auto flex items-center gap-2">
             <Button variant="ghost" size="icon" aria-label="Toggle theme (loading)">
@@ -59,7 +62,7 @@ export function AppHeader({ title }: { title: string }) {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:py-4">
-      <SidebarTrigger className="sm:hidden" />
+      <SidebarTrigger /> {/* Removed sm:hidden to make it always visible */}
       <h1 className="text-xl font-semibold md:text-2xl font-headline">{title}</h1>
       <div className="ml-auto flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
@@ -91,3 +94,4 @@ export function AppHeader({ title }: { title: string }) {
     </header>
   );
 }
+
