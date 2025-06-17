@@ -5,9 +5,16 @@ import * as React from "react";
 import type { Category } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { RotateCw, PlusCircle, Search } from "lucide-react";
+import { RotateCw, PlusCircle, Search, Filter } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CategoryForm } from "@/components/categories/category-form";
 import { CategoryList } from "@/components/categories/category-list";
@@ -28,6 +35,7 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
   const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [currentTab, setCurrentTab] = React.useState<"all" | "income" | "expense" | "general">("all");
+  const [filterStatus, setFilterStatus] = React.useState<"all" | "predefined" | "custom">("all");
   const [categoryToDelete, setCategoryToDelete] = React.useState<Category | null>(null);
 
 
@@ -104,9 +112,12 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
     return categories.filter(category => {
       const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = currentTab === "all" || category.type === currentTab;
-      return matchesSearch && matchesType;
+      const matchesStatus = filterStatus === "all" ||
+                            (filterStatus === "predefined" && !category.isCustom) ||
+                            (filterStatus === "custom" && category.isCustom);
+      return matchesSearch && matchesType && matchesStatus;
     });
-  }, [categories, searchTerm, currentTab]);
+  }, [categories, searchTerm, currentTab, filterStatus]);
 
   return (
     <div className="space-y-4">
@@ -141,6 +152,19 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
+                </div>
+                <div className="flex gap-2 w-full md:w-auto">
+                   <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as "all" | "predefined" | "custom")}>
+                    <SelectTrigger className="w-full md:w-[180px]" aria-label="Filter by status">
+                      <Filter className="h-4 w-4 mr-2 inline-block" />
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="predefined">Predefined</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <TabsContent value="all" className="mt-0">
@@ -228,4 +252,3 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
     </div>
   );
 }
-
