@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,7 +52,10 @@ export function CategoryForm({ category, onSubmit, onCancel, formType }: Categor
         name: category.name,
         type: category.type,
       }
-    : { type: "expense" }; // Default to expense
+    : { 
+        name: "", // Initialize name to empty string
+        type: "expense" 
+      }; 
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(CategoryFormSchema),
