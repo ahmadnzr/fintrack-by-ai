@@ -1,18 +1,21 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import type { Transaction } from "@/lib/types";
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 interface SummaryCardsProps {
   transactions: Transaction[];
+  reportDateISO: string;
 }
 
-export function SummaryCards({ transactions }: SummaryCardsProps) {
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+export function SummaryCards({ transactions, reportDateISO }: SummaryCardsProps) {
+  const reportDate = parseISO(reportDateISO);
+  const currentMonth = reportDate.getMonth();
+  const currentYear = reportDate.getFullYear();
 
   const monthlyTransactions = transactions.filter(t => {
-    const transactionDate = new Date(t.date);
+    const transactionDate = parseISO(t.date); // Use parseISO for consistency
     return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
   });
 
@@ -29,6 +32,8 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
   };
+  
+  const currentMonthFormatted = format(reportDate, 'MMMM yyyy');
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -42,7 +47,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
         <CardContent>
           <div className="text-2xl font-bold text-primary">{formatCurrency(totalIncome)}</div>
           <p className="text-xs text-muted-foreground">
-            For {format(new Date(currentYear, currentMonth), 'MMMM yyyy')}
+            For {currentMonthFormatted}
           </p>
         </CardContent>
       </Card>
@@ -56,7 +61,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
         <CardContent>
           <div className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</div>
            <p className="text-xs text-muted-foreground">
-            For {format(new Date(currentYear, currentMonth), 'MMMM yyyy')}
+            For {currentMonthFormatted}
           </p>
         </CardContent>
       </Card>
@@ -70,7 +75,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
         <CardContent>
           <div className={`text-2xl font-bold ${netBalance >= 0 ? 'text-primary' : 'text-destructive'}`}>{formatCurrency(netBalance)}</div>
            <p className="text-xs text-muted-foreground">
-            For {format(new Date(currentYear, currentMonth), 'MMMM yyyy')}
+            For {currentMonthFormatted}
           </p>
         </CardContent>
       </Card>

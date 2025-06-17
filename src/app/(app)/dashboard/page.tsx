@@ -25,7 +25,7 @@ export default async function DashboardPage() {
     <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <AppHeader title="Dashboard" />
       <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-        <SummaryCards transactions={transactions} />
+        <SummaryCards transactions={transactions} reportDateISO={reportDateISO} />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="shadow-lg col-span-1 lg:col-span-4">
                 <IncomeExpenseChart transactions={transactions} filterStartDateISO={filterStartTwelveMonthsISO} />
