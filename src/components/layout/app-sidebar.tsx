@@ -42,8 +42,10 @@ export function AppSidebar() {
         <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
           <DollarSign className="h-8 w-8 text-primary group-data-[state=expanded]:text-sidebar-primary" />
           {isMobile ? (
-            <SheetTitle className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-              {APP_NAME}
+            <SheetTitle asChild>
+              <h1 className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+                {APP_NAME}
+              </h1>
             </SheetTitle>
           ) : (
             <h1 className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
@@ -56,17 +58,14 @@ export function AppSidebar() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref legacyBehavior>
+              <Link href={item.href}>
                 <SidebarMenuButton
-                  asChild
                   isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))}
                   tooltip={item.label}
                   className="justify-start"
                 >
-                  <a>
-                    <item.icon className="h-5 w-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                  </a>
+                  <item.icon className="h-5 w-5" />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
@@ -76,17 +75,14 @@ export function AppSidebar() {
       <SidebarFooter className="p-2 mt-auto border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <Link href="/settings" passHref legacyBehavior>
+            <Link href="/settings">
               <SidebarMenuButton
-                asChild
                 isActive={pathname === "/settings"}
                 tooltip="Settings"
                 className="justify-start"
               >
-                <a>
-                  <Settings className="h-5 w-5" />
-                  <span className="group-data-[collapsible=icon]:hidden">Settings</span>
-                </a>
+                <Settings className="h-5 w-5" />
+                <span className="group-data-[collapsible=icon]:hidden">Settings</span>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
@@ -95,3 +91,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
