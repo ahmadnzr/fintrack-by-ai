@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String              @id @default(uuid())
+  email             String              @unique
+  name              String?
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @default(now()) @map("updated_at")
+  transactions      Transaction[]
+  categories        Category[]
+  tags              Tag[]
+  userSettings      UserSettings?
+  financialInsights FinancialInsight[]
+
+  @@map("users")
+}
+
+model Transaction {
+  id            String            @id @default(uuid())
+  userId        String            @map("user_id")
+  date          DateTime
+  description   String
+  amount        Decimal
+  categoryId    String            @map("category_id")
+  type          TransactionType
+  attachmentUrl String?           @map("attachment_url")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @default(now()) @map("updated_at")
+  user          User              @relation(fields: [userId], references: [id])
+  category      Category          @relation(fields: [categoryId], references: [id])
+  tags          TransactionTag[]
+
+  @@map("transactions")
+}
+
+model Category {
+  id          String       @id @default(uuid())
+  userId      String       @map("user_id")
+  name        String
+  type        CategoryType
+  isCustom    Boolean      @default(false) @map("is_custom")
+  icon        String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @default(now()) @map("updated_at")
+  user        User         @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@unique([userId, name, type])
+  @@map("categories")
+}
+
+model Tag {
+  id            String           @id @default(uuid())
+  name          String
+  userId        String           @map("user_id")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  user          User             @relation(fields: [userId], references: [id])
+  transactions  TransactionTag[]
+
+  @@unique([userId, name])
+  @@map("tags")
+}
+
+model TransactionTag {
+  transactionId String      @map("transaction_id")
+  tagId         String      @map("tag_id")
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+  @@map("transaction_tags")
+}
+
+model UserSettings {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  theme     String   @default("light")
+  language  String   @default("en")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("user_settings")
+}
+
+model FinancialInsight {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  insights    String
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("financial_insights")
+}
+
+enum TransactionType {
+  income
+  expense
+}
+
+enum CategoryType {
+  income
+  expense
+  general
+}

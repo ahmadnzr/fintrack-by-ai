@@ -13,14 +13,14 @@ Fintrack is a comprehensive personal finance management application that helps u
 - **Data Visualization**: Recharts for charts and graphs
 
 ### Backend
-- **Framework**: Next.js (App Router) with Server Components and Server Actions
-- **API**: Server Actions for data manipulation
-- **Authentication**: Not implemented in the current version (likely to be added with Firebase Auth)
+- **Framework**: Next.js (App Router) with Server Components and API Routes
+- **API**: RESTful API endpoints for data manipulation
+- **Authentication**: JWT-based authentication
+- **API Documentation**: OpenAPI 3.0 schema
 
 ### Database
-- **Database**: In-memory store (simulated database)
-  - In a production environment, this would likely be replaced with Firebase Firestore based on the Firebase dependency in package.json
-- **ORM**: Custom data access functions in `lib/data.ts`
+- **Database**: SQLite (via Prisma)
+- **ORM**: Prisma ORM
 
 ### AI Integration
 - **AI Framework**: Genkit for AI-powered financial insights
@@ -103,8 +103,116 @@ Fintrack is a comprehensive personal finance management application that helps u
    - AI generates personalized financial insights
    - Insights are displayed to the user
 
+## Setup and Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up the database:
+   ```bash
+   npm run prisma:generate
+   npm run prisma:push
+   npm run prisma:seed
+   ```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+   The server will start on port 9002 by default (as configured in package.json).
+
+## API Documentation
+
+The application provides a RESTful API for managing financial data. All API endpoints are protected with JWT authentication except for the registration and login endpoints.
+
+### Authentication Endpoints
+
+- **POST /api/auth/register**
+  - Register a new user
+  - Body: `{ email, name, password }`
+  - Response: `{ success, data: { user, token } }`
+
+- **POST /api/auth/login**
+  - Login with email and password
+  - Body: `{ email, password }`
+  - Response: `{ success, data: { user, token } }`
+
+### Transaction Endpoints
+
+- **GET /api/transactions**
+  - Get all transactions with pagination and filtering
+  - Query parameters: `type`, `category`, `search`, `page`, `limit`
+  - Response: `{ data: Transaction[], pagination: { total, pages, currentPage, limit } }`
+
+- **POST /api/transactions**
+  - Create a new transaction
+  - Body: `{ date, description, amount, category, type, attachmentUrl?, tags? }`
+  - Response: `{ success, data: Transaction }`
+
+- **GET /api/transactions/:id**
+  - Get a transaction by ID
+  - Response: `{ success, data: Transaction }`
+
+- **PUT /api/transactions/:id**
+  - Update a transaction
+  - Body: `{ date, description, amount, category, type, attachmentUrl?, tags? }`
+  - Response: `{ success, data: Transaction }`
+
+- **DELETE /api/transactions/:id**
+  - Delete a transaction
+  - Response: `{ success, data: { id } }`
+
+### Category Endpoints
+
+- **GET /api/categories**
+  - Get all categories with filtering
+  - Query parameters: `type`, `isCustom`, `search`
+  - Response: `{ success, data: Category[] }`
+
+- **POST /api/categories**
+  - Create a new custom category
+  - Body: `{ name, type, icon? }`
+  - Response: `{ success, data: Category }`
+
+- **GET /api/categories/:id**
+  - Get a category by ID
+  - Response: `{ success, data: Category }`
+
+- **PUT /api/categories/:id**
+  - Update a custom category
+  - Body: `{ name, type, icon? }`
+  - Response: `{ success, data: Category }`
+
+- **DELETE /api/categories/:id**
+  - Delete a custom category
+  - Response: `{ success, data: { id } }`
+
+### User Settings Endpoints
+
+- **GET /api/user/settings**
+  - Get user settings
+  - Response: `{ success, data: UserSettings }`
+
+- **PUT /api/user/settings**
+  - Update user settings
+  - Body: `{ theme?, language? }`
+  - Response: `{ success, data: UserSettings }`
+
+### Financial Insights Endpoints
+
+- **POST /api/insights/financial**
+  - Generate financial insights based on transaction data
+  - Response: `{ success, data: { insights, id } }`
+
+### Export Endpoints
+
+- **GET /api/export/transactions**
+  - Export transactions in the specified format
+  - Query parameters: `format`, `startDate?`, `endDate?`, `type?`
+  - Response: File download (currently returns JSON with a note)
+
 ## Future Enhancements
-- User authentication and multi-user support
 - Cloud database integration
 - Budget planning and tracking
 - Financial goal setting
