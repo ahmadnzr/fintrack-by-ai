@@ -1,0 +1,681 @@
+openapi: 3.0.3
+info:
+  title: Fintrack API
+  description: API for Fintrack Personal Finance Management Application
+  version: 1.0.0
+  
+servers:
+  - url: /api
+    description: Default API server
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+      required:
+        - id
+        - email
+    
+    TransactionType:
+      type: string
+      enum: [income, expense]
+    
+    CategoryType:
+      type: string
+      enum: [income, expense, general]
+    
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date-time
+          description: ISO string for date
+        description:
+          type: string
+        amount:
+          type: number
+          format: float
+          minimum: 0
+        category:
+          type: string
+          description: Category ID or name
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        attachmentUrl:
+          type: string
+          format: uri
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - id
+        - date
+        - description
+        - amount
+        - category
+        - type
+    
+    TransactionInput:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+        description:
+          type: string
+          minLength: 1
+        amount:
+          type: number
+          format: float
+          minimum: 0.01
+        category:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        attachmentUrl:
+          type: string
+          format: uri
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - date
+        - description
+        - amount
+        - category
+        - type
+    
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/CategoryType'
+        isCustom:
+          type: boolean
+        icon:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - type
+        - isCustom
+    
+    CategoryInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        type:
+          $ref: '#/components/schemas/CategoryType'
+      required:
+        - name
+        - type
+    
+    FinancialInsightParams:
+      type: object
+      properties:
+        income:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date-time
+              description:
+                type: string
+              amount:
+                type: number
+                format: float
+              category:
+                type: string
+            required:
+              - date
+              - description
+              - amount
+              - category
+        expenses:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date-time
+              description:
+                type: string
+              amount:
+                type: number
+                format: float
+              category:
+                type: string
+            required:
+              - date
+              - description
+              - amount
+              - category
+      required:
+        - income
+        - expenses
+    
+    FinancialInsightResponse:
+      type: object
+      properties:
+        insights:
+          type: string
+          description: AI-generated insights on spending habits
+        error:
+          type: string
+          nullable: true
+    
+    UserSettings:
+      type: object
+      properties:
+        theme:
+          type: string
+          enum: [light, dark]
+          default: light
+        language:
+          type: string
+          enum: [en, id, es]
+          default: en
+    
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            _form:
+              type: array
+              items:
+                type: string
+              nullable: true
+            message:
+              type: string
+              nullable: true
+    
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          nullable: true
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /transactions:
+    get:
+      summary: Get all transactions
+      description: Retrieves all transactions for the authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          description: Filter by transaction type
+          schema:
+            $ref: '#/components/schemas/TransactionType'
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Search term for description, category, or tags
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: A list of transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      pages:
+                        type: integer
+                      currentPage:
+                        type: integer
+                      limit:
+                        type: integer
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new transaction
+      description: Creates a new transaction for the authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionInput'
+      responses:
+        '201':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+  /transactions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a transaction by ID
+      description: Retrieves a specific transaction by its ID
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Transaction details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transaction not found
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update a transaction
+      description: Updates an existing transaction
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionInput'
+      responses:
+        '200':
+          description: Transaction updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Transaction not found
+        '401':
+          description: Unauthorized
+    delete:
+      summary: Delete a transaction
+      description: Deletes an existing transaction
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Transaction deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Transaction not found
+        '401':
+          description: Unauthorized
+
+  /categories:
+    get:
+      summary: Get all categories
+      description: Retrieves all categories for the authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          description: Filter by category type
+          schema:
+            $ref: '#/components/schemas/CategoryType'
+        - name: isCustom
+          in: query
+          description: Filter by custom status
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          description: Search term for category name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new category
+      description: Creates a new custom category for the authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Category'
+        '400':
+          description: Invalid input or category already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+  /categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a category by ID
+      description: Retrieves a specific category by its ID
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Category details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Category'
+        '404':
+          description: Category not found
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update a category
+      description: Updates an existing custom category
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Category'
+        '400':
+          description: Invalid input or category already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Category not found or not a custom category
+        '401':
+          description: Unauthorized
+    delete:
+      summary: Delete a category
+      description: Deletes an existing custom category
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Category deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Category not found or not a custom category
+        '401':
+          description: Unauthorized
+
+  /insights/financial:
+    post:
+      summary: Generate financial insights
+      description: Generates AI-powered financial insights based on transaction data
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Financial insights generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialInsightResponse'
+        '400':
+          description: Not enough transaction data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+  /user/settings:
+    get:
+      summary: Get user settings
+      description: Retrieves the settings for the authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserSettings'
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update user settings
+      description: Updates the settings for the authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSettings'
+      responses:
+        '200':
+          description: Settings updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserSettings'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+  /export/transactions:
+    get:
+      summary: Export transactions
+      description: Exports transactions in the specified format
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          required: true
+          description: Export format
+          schema:
+            type: string
+            enum: [pdf, excel]
+        - name: startDate
+          in: query
+          description: Start date for filtering transactions (ISO format)
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          description: End date for filtering transactions (ISO format)
+          schema:
+            type: string
+            format: date-time
+        - name: type
+          in: query
+          description: Filter by transaction type
+          schema:
+            $ref: '#/components/schemas/TransactionType'
+      responses:
+        '200':
+          description: File download
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized

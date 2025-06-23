@@ -1,0 +1,98 @@
+// Database schema for Fintrack application
+// Compatible with SQLite
+
+Table users {
+  id UUID [pk]
+  email String [unique, not null]
+  name String
+  created_at DateTime [default: `CURRENT_TIMESTAMP`]
+  updated_at DateTime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table transactions {
+  id UUID [pk]
+  user_id UUID [ref: > users.id]
+  date DateTime [not null]
+  description String [not null]
+  amount Decimal [not null]
+  category_id UUID [ref: > categories.id]
+  type TransactionType [not null]
+  attachment_url String
+  created_at DateTime [default: `CURRENT_TIMESTAMP`]
+  updated_at DateTime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table categories {
+  id UUID [pk]
+  user_id UUID [ref: > users.id]
+  name String [not null]
+  type CategoryType [not null]
+  is_custom Boolean [not null, default: false]
+  icon String
+  created_at DateTime [default: `CURRENT_TIMESTAMP`]
+  updated_at DateTime [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (user_id, name, type) [unique]
+  }
+}
+
+Table tags {
+  id UUID [pk]
+  name String [not null]
+  user_id UUID [ref: > users.id]
+  created_at DateTime [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (user_id, name) [unique]
+  }
+}
+
+Table transaction_tags {
+  transaction_id UUID [ref: > transactions.id]
+  tag_id UUID [ref: > tags.id]
+
+  indexes {
+    (transaction_id, tag_id) [pk]
+  }
+}
+
+// Settings table for user preferences like theme, language, etc.
+Table user_settings {
+  id UUID [pk]
+  user_id UUID [unique, ref: > users.id]
+  theme String [default: 'light']
+  language String [default: 'en']
+  created_at DateTime [default: `CURRENT_TIMESTAMP`]
+  updated_at DateTime [default: `CURRENT_TIMESTAMP`]
+}
+
+// AI insights table to store generated insights
+Table financial_insights {
+  id UUID [pk]
+  user_id UUID [ref: > users.id]
+  insights Text [not null]
+  period_start DateTime [not null]
+  period_end DateTime [not null]
+  created_at DateTime [default: `CURRENT_TIMESTAMP`]
+}
+
+// Enum definitions
+Enum TransactionType {
+  income
+  expense
+}
+
+Enum CategoryType {
+  income
+  expense
+  general
+}
+
+// Relationships and notes
+// - Users can have many transactions and categories
+// - Transactions belong to a category
+// - Transactions can have multiple tags through transaction_tags
+// - Categories have a type (income, expense, or general)
+// - User settings are 1:1 with users
+// - Financial insights are generated for a user for a specific period
