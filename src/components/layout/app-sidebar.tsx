@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -123,20 +122,19 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-2 mt-auto border-t border-sidebar-border">
         <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
-          <DialogTrigger asChild>
-            <SidebarMenu>
-              <SidebarMenuItem>
+          <SidebarMenu>
+            <SidebarMenuItem>
+                <DialogTrigger asChild>
                   <SidebarMenuButton
                     tooltip="Settings"
                     className="justify-start"
-                    // isActive={isSettingsDialogOpen} // Optional: highlight if dialog is open
                   >
                     <Settings className="h-5 w-5" />
                     <span className="group-data-[collapsible=icon]:hidden">Settings</span>
                   </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </DialogTrigger>
+                </DialogTrigger>
+            </SidebarMenuItem>
+          </SidebarMenu>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Application Settings</DialogTitle>
@@ -179,8 +177,6 @@ export function AppSidebar() {
                 </p>
               </div>
             </div>
-            {/* Optional: DialogFooter for close button if needed, but default X button is present */}
-            {/* <DialogFooter> <Button onClick={() => setIsSettingsDialogOpen(false)}>Close</Button> </DialogFooter> */}
           </DialogContent>
         </Dialog>
       </SidebarFooter>
