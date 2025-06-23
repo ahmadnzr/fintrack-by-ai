@@ -1,4 +1,3 @@
-
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -12,11 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 
 export function AppHeader({ title }: { title: string }) {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
 
@@ -62,7 +63,7 @@ export function AppHeader({ title }: { title: string }) {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:py-4">
-      <SidebarTrigger /> {/* Removed sm:hidden to make it always visible */}
+      <SidebarTrigger />
       <h1 className="text-xl font-semibold md:text-2xl font-headline">{title}</h1>
       <div className="ml-auto flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
@@ -87,11 +88,16 @@ export function AppHeader({ title }: { title: string }) {
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem 
+              onSelect={() => router.push('/login')}
+              className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </header>
   );
 }
-
