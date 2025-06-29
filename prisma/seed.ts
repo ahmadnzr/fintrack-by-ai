@@ -205,6 +205,126 @@ async function main() {
 
   console.log('Created tags');
 
+  // Create facilities for room booking system
+  const facilities = [
+    { name: 'Projector', description: 'HD projector for presentations', icon: 'projector' },
+    { name: 'Whiteboard', description: 'Large whiteboard for brainstorming', icon: 'whiteboard' },
+    { name: 'Video Conference', description: 'Video conferencing equipment', icon: 'video-camera' },
+    { name: 'Air Conditioning', description: 'Climate control system', icon: 'snowflake' },
+    { name: 'WiFi', description: 'High-speed wireless internet', icon: 'wifi' },
+    { name: 'Sound System', description: 'Audio equipment for presentations', icon: 'volume-up' },
+  ];
+
+  const createdFacilities = [];
+  for (const facility of facilities) {
+    const createdFacility = await prisma.facility.create({
+      data: {
+        id: uuidv4(),
+        name: facility.name,
+        description: facility.description,
+        icon: facility.icon,
+      },
+    });
+    createdFacilities.push(createdFacility);
+  }
+
+  console.log('Created facilities');
+
+  // Create rooms
+  const rooms = [
+    {
+      name: 'Conference Room A',
+      description: 'Large conference room for important meetings',
+      capacity: 20,
+      location: 'Floor 2, East Wing',
+      facilityIds: [createdFacilities[0].id, createdFacilities[1].id, createdFacilities[2].id, createdFacilities[3].id, createdFacilities[4].id],
+    },
+    {
+      name: 'Meeting Room B',
+      description: 'Medium-sized meeting room for team discussions',
+      capacity: 10,
+      location: 'Floor 1, West Wing',
+      facilityIds: [createdFacilities[1].id, createdFacilities[3].id, createdFacilities[4].id],
+    },
+    {
+      name: 'Small Meeting Room C',
+      description: 'Cozy room for small team meetings',
+      capacity: 6,
+      location: 'Floor 1, East Wing',
+      facilityIds: [createdFacilities[1].id, createdFacilities[4].id],
+    },
+    {
+      name: 'Training Room D',
+      description: 'Large training room with presentation equipment',
+      capacity: 30,
+      location: 'Floor 3, Central',
+      facilityIds: [createdFacilities[0].id, createdFacilities[1].id, createdFacilities[3].id, createdFacilities[4].id, createdFacilities[5].id],
+    },
+  ];
+
+  const createdRooms = [];
+  for (const room of rooms) {
+    const createdRoom = await prisma.room.create({
+      data: {
+        id: uuidv4(),
+        name: room.name,
+        description: room.description,
+        capacity: room.capacity,
+        location: room.location,
+        status: 'available',
+        facilities: {
+          create: room.facilityIds.map(facilityId => ({
+            facilityId,
+          })),
+        },
+      },
+    });
+    createdRooms.push(createdRoom);
+  }
+
+  console.log('Created rooms');
+
+  // Create sample bookings
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+
+  // Create a confirmed booking for tomorrow
+  await prisma.booking.create({
+    data: {
+      id: uuidv4(),
+      userId: user.id,
+      roomId: createdRooms[0].id,
+      startTime: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 9, 0, 0),
+      endTime: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 11, 0, 0),
+      purpose: 'Weekly team standup meeting',
+      status: 'confirmed',
+    },
+  });
+
+  // Update room status to booked
+  await prisma.room.update({
+    where: { id: createdRooms[0].id },
+    data: { status: 'booked' },
+  });
+
+  // Create a pending booking for next week
+  await prisma.booking.create({
+    data: {
+      id: uuidv4(),
+      userId: user.id,
+      roomId: createdRooms[1].id,
+      startTime: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate(), 14, 0, 0),
+      endTime: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate(), 16, 0, 0),
+      purpose: 'Client presentation for Q1 results',
+      status: 'pending',
+    },
+  });
+
+  console.log('Created sample bookings');
+
   console.log('Seed completed successfully');
 }
 

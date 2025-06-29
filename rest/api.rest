@@ -1,6 +1,6 @@
 ### Variables
 @baseUrl = http://localhost:9002
-@token = your-jwt-token-here
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjNzg0MWJiYi1hZWRjLTQxZDItYThmYS1jZTFiM2I1OTAzMDIiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJpYXQiOjE3NTEyMTg2MTUsImV4cCI6MTc1MTgyMzQxNX0.-j02NDP-4hBIjdwlM_imHtrEqT9pVO-YVu6bs5-nsFc
 
 ###############################################################################
 # AUTHENTICATION ENDPOINTS
@@ -238,6 +238,239 @@ GET {{baseUrl}}/api/export/transactions?format=excel&type=expense&startDate=2024
 Authorization: Bearer {{token}}
 
 ###############################################################################
+# ROOM MANAGEMENT ENDPOINTS
+###############################################################################
+
+### Get all rooms
+GET {{baseUrl}}/api/rooms
+Authorization: Bearer {{token}}
+
+### Get rooms with filters
+GET {{baseUrl}}/api/rooms?status=available&capacity=10&search=meeting&page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Get available rooms only
+GET {{baseUrl}}/api/rooms?status=available
+Authorization: Bearer {{token}}
+
+### Get rooms with specific facilities
+GET {{baseUrl}}/api/rooms?facilityIds=550e8400-e29b-41d4-a716-446655440010,550e8400-e29b-41d4-a716-446655440011
+Authorization: Bearer {{token}}
+
+### Create new room (Admin only)
+POST {{baseUrl}}/api/rooms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Conference Room A South",
+  "description": "Large conference room with projector and whiteboard",
+  "capacity": 20,
+  "location": "Floor 2, East Wing",
+  "facilityIds": [
+    "83916c36-2dd5-472f-a36e-f5bd8ea8b44f"
+  ]
+}
+
+### Create meeting room
+POST {{baseUrl}}/api/rooms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Meeting Room B",
+  "description": "Small meeting room for team discussions",
+  "capacity": 8,
+  "location": "Floor 1, West Wing"
+}
+
+### Get room by ID
+GET {{baseUrl}}/api/rooms/550e8400-e29b-41d4-a716-446655440020
+Authorization: Bearer {{token}}
+
+### Update room (Admin only)
+PUT {{baseUrl}}/api/rooms/550e8400-e29b-41d4-a716-446655440020
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Conference Room A",
+  "description": "Updated description with new equipment",
+  "capacity": 25,
+  "location": "Floor 2, East Wing",
+  "facilityIds": [
+    "550e8400-e29b-41d4-a716-446655440010",
+    "550e8400-e29b-41d4-a716-446655440011",
+    "550e8400-e29b-41d4-a716-446655440012"
+  ]
+}
+
+### Delete room (Admin only)
+DELETE {{baseUrl}}/api/rooms/550e8400-e29b-41d4-a716-446655440020
+Authorization: Bearer {{token}}
+
+###############################################################################
+# FACILITY MANAGEMENT ENDPOINTS
+###############################################################################
+
+### Get all facilities
+GET {{baseUrl}}/api/facilities
+Authorization: Bearer {{token}}
+
+### Search facilities
+GET {{baseUrl}}/api/facilities?search=smoking
+Authorization: Bearer {{token}}
+
+### Create new facility (Admin only)
+POST {{baseUrl}}/api/facilities
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Smoking Area",
+  "description": "For Men Only",
+  "icon": "smoking"
+}
+
+### Create whiteboard facility
+POST {{baseUrl}}/api/facilities
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Whiteboard",
+  "description": "Large whiteboard for brainstorming",
+  "icon": "whiteboard"
+}
+
+### Create video conference facility
+POST {{baseUrl}}/api/facilities
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Video Conference",
+  "description": "Video conferencing equipment with camera and microphone",
+  "icon": "video-camera"
+}
+
+### Get facility by ID
+GET {{baseUrl}}/api/facilities/bf8f980d-804c-495c-b78e-8074f5722835
+Authorization: Bearer {{token}}
+
+### Update facility (Admin only)
+PUT {{baseUrl}}/api/facilities/550e8400-e29b-41d4-a716-446655440010
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "4K Projector",
+  "description": "Ultra HD 4K projector for high-quality presentations",
+  "icon": "projector-4k"
+}
+
+### Delete facility (Admin only)
+DELETE {{baseUrl}}/api/facilities/bf8f980d-804c-495c-b78e-8074f5722835
+Authorization: Bearer {{token}}
+
+###############################################################################
+# BOOKING MANAGEMENT ENDPOINTS
+###############################################################################
+
+### Get all bookings (user's own bookings)
+GET {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+
+### Get bookings with filters
+GET {{baseUrl}}/api/bookings?status=confirmed&roomId=550e8400-e29b-41d4-a716-446655440020&page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Get bookings by status
+GET {{baseUrl}}/api/bookings?status=pending
+Authorization: Bearer {{token}}
+
+### Get bookings by date range
+GET {{baseUrl}}/api/bookings?startDate=2024-01-01T00:00:00.000Z&endDate=2024-01-31T23:59:59.999Z
+Authorization: Bearer {{token}}
+
+### Get all bookings (Admin only - with userId filter)
+GET {{baseUrl}}/api/bookings?userId=550e8400-e29b-41d4-a716-446655440001
+Authorization: Bearer {{token}}
+
+### Create new booking
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roomId": "f466f40e-3669-4422-b667-62ed44f8b5a3",
+  "startTime": "2025-08-15T09:00:00.000Z",
+  "endTime": "2025-08-15T11:00:00.000Z",
+  "purpose": "Team meeting to discuss project roadmap"
+}
+
+### Create booking for presentation
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roomId": "550e8400-e29b-41d4-a716-446655440020",
+  "startTime": "2024-01-16T14:00:00.000Z",
+  "endTime": "2024-01-16T16:00:00.000Z",
+  "purpose": "Client presentation for Q1 results"
+}
+
+### Create booking for training
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roomId": "550e8400-e29b-41d4-a716-446655440021",
+  "startTime": "2024-01-17T10:00:00.000Z",
+  "endTime": "2024-01-17T12:00:00.000Z",
+  "purpose": "Employee training session on new software"
+}
+
+### Get booking by ID
+GET {{baseUrl}}/api/bookings/550e8400-e29b-41d4-a716-446655440030
+Authorization: Bearer {{token}}
+
+### Update booking (confirm)
+PUT {{baseUrl}}/api/bookings/d20aab17-2b5f-47e6-8533-50494de7bb68
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "confirmed"
+}
+
+### Update booking (cancel)
+PUT {{baseUrl}}/api/bookings/550e8400-e29b-41d4-a716-446655440030
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "cancelled"
+}
+
+### Update booking (modify time and purpose)
+PUT {{baseUrl}}/api/bookings/550e8400-e29b-41d4-a716-446655440030
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "startTime": "2024-01-15T10:00:00.000Z",
+  "endTime": "2024-01-15T12:00:00.000Z",
+  "purpose": "Updated meeting purpose - quarterly review"
+}
+
+### Delete booking
+DELETE {{baseUrl}}/api/bookings/550e8400-e29b-41d4-a716-446655440030
+Authorization: Bearer {{token}}
+
+###############################################################################
 # TESTING SCENARIOS
 ###############################################################################
 
@@ -267,6 +500,113 @@ GET {{baseUrl}}/api/transactions
 ### Test invalid token
 GET {{baseUrl}}/api/transactions
 Authorization: Bearer invalid-token-here
+
+###############################################################################
+# ROOM BOOKING TESTING SCENARIOS
+###############################################################################
+
+### Test invalid room creation (missing required fields)
+POST {{baseUrl}}/api/rooms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Room without name and capacity"
+}
+
+### Test invalid facility creation (duplicate name)
+POST {{baseUrl}}/api/facilities
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Projector",
+  "description": "Duplicate facility name"
+}
+
+### Test invalid booking (missing required fields)
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "purpose": "Meeting without room and time"
+}
+
+### Test booking time conflict
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roomId": "550e8400-e29b-41d4-a716-446655440020",
+  "startTime": "2024-01-15T09:00:00.000Z",
+  "endTime": "2024-01-15T11:00:00.000Z",
+  "purpose": "Conflicting booking - same time as existing booking"
+}
+
+### Test user with multiple active bookings (should fail)
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roomId": "550e8400-e29b-41d4-a716-446655440021",
+  "startTime": "2024-01-15T13:00:00.000Z",
+  "endTime": "2024-01-15T15:00:00.000Z",
+  "purpose": "Second booking while user already has confirmed booking"
+}
+
+### Test booking non-existent room
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roomId": "00000000-0000-0000-0000-000000000000",
+  "startTime": "2025-08-15T16:00:00.000Z",
+  "endTime": "2025-08-15T18:00:00.000Z",
+  "purpose": "Booking non-existent room"
+}
+
+### Test invalid time range (end before start)
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roomId": "550e8400-e29b-41d4-a716-446655440020",
+  "startTime": "2024-01-15T18:00:00.000Z",
+  "endTime": "2024-01-15T16:00:00.000Z",
+  "purpose": "Invalid time range - end before start"
+}
+
+### Test unauthorized room creation (non-admin user)
+POST {{baseUrl}}/api/rooms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Unauthorized Room",
+  "capacity": 10
+}
+
+### Test unauthorized facility deletion (non-admin user)
+DELETE {{baseUrl}}/api/facilities/550e8400-e29b-41d4-a716-446655440010
+Authorization: Bearer {{token}}
+
+### Test accessing other user's booking
+GET {{baseUrl}}/api/bookings/550e8400-e29b-41d4-a716-446655440099
+Authorization: Bearer {{token}}
+
+### Test updating other user's booking
+PUT {{baseUrl}}/api/bookings/550e8400-e29b-41d4-a716-446655440099
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "cancelled"
+}
 
 ###############################################################################
 # NOTES

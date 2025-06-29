@@ -21,6 +21,7 @@ model User {
   tags              Tag[]
   userSettings      UserSettings?
   financialInsights FinancialInsight[]
+  bookings          Booking[]
 
   @@map("users")
 }
@@ -105,6 +106,58 @@ model FinancialInsight {
   @@map("financial_insights")
 }
 
+model Room {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  capacity    Int
+  status      RoomStatus     @default(available)
+  location    String?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @default(now()) @map("updated_at")
+  facilities  RoomFacility[]
+  bookings    Booking[]
+
+  @@map("rooms")
+}
+
+model Facility {
+  id          String         @id @default(uuid())
+  name        String         @unique
+  description String?
+  icon        String?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  rooms       RoomFacility[]
+
+  @@map("facilities")
+}
+
+model RoomFacility {
+  roomId     String   @map("room_id")
+  facilityId String   @map("facility_id")
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  facility   Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, facilityId])
+  @@map("room_facilities")
+}
+
+model Booking {
+  id        String        @id @default(uuid())
+  userId    String        @map("user_id")
+  roomId    String        @map("room_id")
+  startTime DateTime      @map("start_time")
+  endTime   DateTime      @map("end_time")
+  purpose   String
+  status    BookingStatus @default(pending)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @default(now()) @map("updated_at")
+  user      User          @relation(fields: [userId], references: [id])
+  room      Room          @relation(fields: [roomId], references: [id])
+
+  @@map("bookings")
+}
+
 enum TransactionType {
   income
   expense
@@ -114,4 +167,17 @@ enum CategoryType {
   income
   expense
   general
+}
+
+enum RoomStatus {
+  available
+  booked
+  maintenance
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
 }

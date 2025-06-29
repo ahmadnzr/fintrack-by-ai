@@ -208,6 +208,183 @@ components:
           enum: [en, id, es]
           default: en
     
+    RoomStatus:
+      type: string
+      enum: [available, booked, maintenance]
+    
+    BookingStatus:
+      type: string
+      enum: [pending, confirmed, cancelled, completed]
+    
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        capacity:
+          type: integer
+          minimum: 1
+        status:
+          $ref: '#/components/schemas/RoomStatus'
+        location:
+          type: string
+          nullable: true
+        facilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Facility'
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - capacity
+        - status
+    
+    RoomInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 100
+        location:
+          type: string
+          maxLength: 200
+          nullable: true
+        facilityIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+      required:
+        - name
+        - capacity
+    
+    Facility:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+    
+    FacilityInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        description:
+          type: string
+          maxLength: 200
+          nullable: true
+        icon:
+          type: string
+          maxLength: 50
+          nullable: true
+      required:
+        - name
+    
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        roomId:
+          type: string
+          format: uuid
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        purpose:
+          type: string
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        room:
+          $ref: '#/components/schemas/Room'
+          nullable: true
+        user:
+          $ref: '#/components/schemas/User'
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - roomId
+        - startTime
+        - endTime
+        - purpose
+        - status
+    
+    BookingInput:
+      type: object
+      properties:
+        roomId:
+          type: string
+          format: uuid
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        purpose:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required:
+        - roomId
+        - startTime
+        - endTime
+        - purpose
+    
     ErrorResponse:
       type: object
       properties:
@@ -302,6 +479,536 @@ paths:
                         type: integer
         '401':
           description: Unauthorized
+
+  /rooms:
+    get:
+      summary: Get all rooms
+      description: Retrieves all rooms with optional filtering
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by room status
+          schema:
+            $ref: '#/components/schemas/RoomStatus'
+        - name: capacity
+          in: query
+          description: Minimum capacity required
+          schema:
+            type: integer
+            minimum: 1
+        - name: facilityIds
+          in: query
+          description: Filter by facility IDs (comma-separated)
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Search term for room name or location
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: A list of rooms
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Room'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      pages:
+                        type: integer
+                      currentPage:
+                        type: integer
+                      limit:
+                        type: integer
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new room
+      description: Creates a new room (admin only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomInput'
+      responses:
+        '201':
+          description: Room created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Room'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin access required
+
+  /rooms/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a room by ID
+      description: Retrieves a specific room with its facilities
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Room details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Room'
+        '404':
+          description: Room not found
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update a room
+      description: Updates an existing room (admin only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomInput'
+      responses:
+        '200':
+          description: Room updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Room'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Room not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin access required
+    delete:
+      summary: Delete a room
+      description: Deletes an existing room (admin only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Room deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Room not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin access required
+
+  /facilities:
+    get:
+      summary: Get all facilities
+      description: Retrieves all available facilities
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          description: Search term for facility name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of facilities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Facility'
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new facility
+      description: Creates a new facility (admin only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacilityInput'
+      responses:
+        '201':
+          description: Facility created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Facility'
+        '400':
+          description: Invalid input or facility already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin access required
+
+  /facilities/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a facility by ID
+      description: Retrieves a specific facility by its ID
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Facility details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Facility'
+        '404':
+          description: Facility not found
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update a facility
+      description: Updates an existing facility (admin only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacilityInput'
+      responses:
+        '200':
+          description: Facility updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Facility'
+        '400':
+          description: Invalid input or facility already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Facility not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin access required
+    delete:
+      summary: Delete a facility
+      description: Deletes an existing facility (admin only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Facility deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Facility not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin access required
+
+  /bookings:
+    get:
+      summary: Get bookings
+      description: Retrieves bookings for the authenticated user or all bookings (admin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by booking status
+          schema:
+            $ref: '#/components/schemas/BookingStatus'
+        - name: roomId
+          in: query
+          description: Filter by room ID
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: query
+          description: Filter by user ID (admin only)
+          schema:
+            type: string
+            format: uuid
+        - name: startDate
+          in: query
+          description: Filter bookings starting from this date
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          description: Filter bookings ending before this date
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: A list of bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Booking'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      pages:
+                        type: integer
+                      currentPage:
+                        type: integer
+                      limit:
+                        type: integer
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new booking
+      description: Creates a new room booking
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingInput'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid input, time conflict, or user already has active booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+  /bookings/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a booking by ID
+      description: Retrieves a specific booking by its ID
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Booking'
+        '404':
+          description: Booking not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Can only access own bookings
+    put:
+      summary: Update a booking
+      description: Updates an existing booking (cancel, confirm, or modify)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/BookingStatus'
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+                purpose:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+      responses:
+        '200':
+          description: Booking updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid input or time conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Can only modify own bookings
+    delete:
+      summary: Delete a booking
+      description: Deletes an existing booking
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Booking deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Booking not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Can only delete own bookings
+
+  /transactions:
     post:
       summary: Create a new transaction
       description: Creates a new transaction for the authenticated user

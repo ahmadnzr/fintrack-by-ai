@@ -77,6 +77,47 @@ Table financial_insights {
   created_at DateTime [default: `CURRENT_TIMESTAMP`]
 }
 
+// Room Management Tables
+Table rooms {
+  id UUID [pk]
+  name String [not null]
+  description String
+  capacity Integer [not null]
+  status RoomStatus [not null, default: 'available']
+  location String
+  created_at DateTime [default: `CURRENT_TIMESTAMP`]
+  updated_at DateTime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table facilities {
+  id UUID [pk]
+  name String [not null, unique]
+  description String
+  icon String
+  created_at DateTime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table room_facilities {
+  room_id UUID [ref: > rooms.id]
+  facility_id UUID [ref: > facilities.id]
+  
+  indexes {
+    (room_id, facility_id) [pk]
+  }
+}
+
+Table bookings {
+  id UUID [pk]
+  user_id UUID [ref: > users.id]
+  room_id UUID [ref: > rooms.id]
+  start_time DateTime [not null]
+  end_time DateTime [not null]
+  purpose String [not null]
+  status BookingStatus [not null, default: 'pending']
+  created_at DateTime [default: `CURRENT_TIMESTAMP`]
+  updated_at DateTime [default: `CURRENT_TIMESTAMP`]
+}
+
 // Enum definitions
 Enum TransactionType {
   income
@@ -89,6 +130,19 @@ Enum CategoryType {
   general
 }
 
+Enum RoomStatus {
+  available
+  booked
+  maintenance
+}
+
+Enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
 // Relationships and notes
 // - Users can have many transactions and categories
 // - Transactions belong to a category
@@ -96,3 +150,8 @@ Enum CategoryType {
 // - Categories have a type (income, expense, or general)
 // - User settings are 1:1 with users
 // - Financial insights are generated for a user for a specific period
+// - Rooms can have multiple facilities through room_facilities
+// - Users can have multiple bookings
+// - Each booking belongs to one user and one room
+// - Room status automatically updates based on active bookings
+// - Business rule: One user can only have one confirmed booking at a time

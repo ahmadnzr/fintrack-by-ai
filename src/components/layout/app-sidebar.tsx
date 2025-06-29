@@ -11,6 +11,7 @@ import {
   Settings,
   Sun,
   Moon,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -37,6 +38,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ListChecks },
   { href: "/categories", label: "Categories", icon: Shapes },
+  { href: "/bookings", label: "Room Bookings", icon: Calendar },
   { href: "/reports", label: "Reports & Insights", icon: FileText },
 ];
 
