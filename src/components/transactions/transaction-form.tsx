@@ -65,10 +65,10 @@ export function TransactionForm({ transaction, categories, onSubmit, onCancel, f
         date: new Date(transaction.date),
         description: transaction.description,
         amount: transaction.amount,
-        category: transaction.category, 
+        category: transaction.category.name, // Use category name for form
         type: transaction.type,
         attachmentUrl: transaction.attachmentUrl || '',
-        tags: transaction.tags?.join(", ") || '',
+        tags: transaction.tags?.map(tag => tag.name).join(", ") || '',
       }
     : {
         date: new Date(),
@@ -265,11 +265,6 @@ export function TransactionForm({ transaction, categories, onSubmit, onCancel, f
           )}
         />
         
-        {form.formState.errors._form && (
-          <FormMessage className="text-destructive-foreground bg-destructive p-3 rounded-md">
-            {form.formState.errors._form.message}
-          </FormMessage>
-        )}
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
@@ -284,4 +279,3 @@ export function TransactionForm({ transaction, categories, onSubmit, onCancel, f
     </Form>
   );
 }
-

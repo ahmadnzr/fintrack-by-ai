@@ -23,7 +23,7 @@ import type { Transaction, Category } from "@/lib/types";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { TransactionForm } from "./transaction-form";
-import { deleteTransactionAction, addTransactionAction, updateTransactionAction } from "@/lib/actions";
+import { TransactionsApi } from "@/lib/transactions-api";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -49,43 +49,57 @@ export function TransactionTable({ transactions, categories, onTransactionUpdate
   };
 
   const handleDelete = async (id: string) => {
-    const result = await deleteTransactionAction(id);
-    if (result.success) {
+    try {
+      await TransactionsApi.deleteTransaction(id);
       toast({ title: "Success", description: "Transaction deleted successfully." });
       onTransactionUpdate();
-    } else {
-      toast({ variant: "destructive", title: "Error", description: result.error || "Failed to delete transaction." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to delete transaction." });
     }
   };
 
-  const handleSubmitForm = async (data: any) => {
-    const formData = new FormData();
-    formData.append('date', data.date.toISOString());
-    formData.append('description', data.description);
-    formData.append('amount', data.amount.toString());
-    formData.append('category', data.category);
-    formData.append('type', data.type);
-    if (data.attachmentUrl) formData.append('attachmentUrl', data.attachmentUrl);
-    if (data.tags) formData.append('tags', data.tags);
+  const handleSubmitForm = async (data: {
+    date: Date;
+    description: string;
+    amount: number;
+    category: string;
+    type: 'income' | 'expense';
+    attachmentUrl?: string;
+    tags?: string;
+  }) => {
+    try {
+      // Find the category ID from the category name
+      const selectedCategory = categories.find(cat => cat.name === data.category);
+      if (!selectedCategory) {
+        throw new Error('Selected category not found');
+      }
 
-    let result;
-    if (editingTransaction) {
-      result = await updateTransactionAction(editingTransaction.id, formData);
-    } else {
-      // This form is now only for editing, adding is handled by TransactionsPageClient's dialog
-      // but keeping the logic just in case it's used standalone or for future refactor.
-      result = await addTransactionAction(formData); 
-    }
+      const transactionData = {
+        date: data.date.toISOString(),
+        description: data.description,
+        amount: data.amount,
+        category: selectedCategory.id, // Use categoryId for API
+        type: data.type,
+        attachmentUrl: data.attachmentUrl,
+        tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : undefined,
+      };
 
-    if (result.success) {
-      toast({ title: "Success", description: `Transaction ${editingTransaction ? 'updated' : 'added'} successfully.` });
+      if (editingTransaction) {
+        await TransactionsApi.updateTransaction(editingTransaction.id, transactionData);
+        toast({ title: "Success", description: "Transaction updated successfully." });
+      } else {
+        await TransactionsApi.createTransaction(transactionData);
+        toast({ title: "Success", description: "Transaction added successfully." });
+      }
+
       onTransactionUpdate();
       setIsFormOpen(false);
       setEditingTransaction(null);
       return { success: true };
-    } else {
-      toast({ variant: "destructive", title: "Error", description: (typeof result.error === 'string' ? result.error : result.error?._form?.join(', ')) || "Failed to save transaction." });
-      return { success: false, error: result.error };
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to save transaction.";
+      toast({ variant: "destructive", title: "Error", description: errorMessage });
+      return { success: false, error: errorMessage };
     }
   };
   
@@ -120,7 +134,7 @@ export function TransactionTable({ transactions, categories, onTransactionUpdate
                 <TableCell>{format(new Date(transaction.date), "MMM dd, yyyy")}</TableCell>
                 <TableCell className="font-medium max-w-xs truncate">{transaction.description}</TableCell>
                 <TableCell>
-                  <Badge variant="outline">{transaction.category}</Badge>
+                  <Badge variant="outline">{transaction.category.name}</Badge>
                 </TableCell>
                 <TableCell className={`text-right font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                   {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
@@ -219,7 +233,7 @@ export function TransactionTable({ transactions, categories, onTransactionUpdate
                 </span>
               </div>
               <div><strong>Date:</strong> {format(new Date(viewingTransaction.date), "PPP")}</div>
-              <div><strong>Category:</strong> <Badge variant="outline">{viewingTransaction.category}</Badge></div>
+              <div><strong>Category:</strong> <Badge variant="outline">{viewingTransaction.category.name}</Badge></div>
               <div><strong>Type:</strong> 
                 <Badge variant={viewingTransaction.type === "income" ? "default" : "secondary"}
                        className={viewingTransaction.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
@@ -232,7 +246,7 @@ export function TransactionTable({ transactions, categories, onTransactionUpdate
               {viewingTransaction.tags && viewingTransaction.tags.length > 0 && (
                 <div><strong>Tags:</strong> 
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {viewingTransaction.tags.map(tag => <Badge key={tag} variant="secondary"><Tags className="mr-1 h-3 w-3"/>{tag}</Badge>)}
+                    {viewingTransaction.tags.map(tag => <Badge key={tag.id} variant="secondary"><Tags className="mr-1 h-3 w-3"/>{tag.name}</Badge>)}
                   </div>
                 </div>
               )}

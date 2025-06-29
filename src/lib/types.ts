@@ -6,10 +6,10 @@ export interface Transaction {
   date: string; // ISO string for date
   description: string;
   amount: number;
-  category: string; // Category ID or name, depends on final structure, using name for simplicity now
+  category: Category; // Full category object from API
   type: TransactionType;
   attachmentUrl?: string;
-  tags?: string[];
+  tags?: Array<{ id: string; name: string }>; // Tag objects from API
 }
 
 export interface Category {

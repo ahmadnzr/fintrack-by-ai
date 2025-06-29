@@ -129,6 +129,14 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    // Mark category as predefined (not custom) when it's used in a transaction
+    if (category.isCustom) {
+      await prisma.category.update({
+        where: { id: categoryId },
+        data: { isCustom: false }
+      });
+    }
+
     // Handle tags if provided
     if (tags && tags.length > 0) {
       // Process each tag

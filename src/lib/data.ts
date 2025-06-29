@@ -52,6 +52,8 @@ export async function deleteTransaction(id: string): Promise<boolean> {
 
 // Category Functions
 export async function getAllCategories(): Promise<Category[]> {
+  // This function is now deprecated in favor of API calls
+  // Keeping for backward compatibility, but should use API endpoints
   await delay(50);
   return [...categoriesStore];
 }
@@ -121,4 +123,3 @@ if (typeof window !== 'undefined') {
   }
 }
 const v4 = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-

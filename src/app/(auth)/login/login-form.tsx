@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Loader2, AtSign, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AuthClient } from "@/lib/auth-client";
 import Link from "next/link";
 
 const LoginFormSchema = z.object({
@@ -42,27 +43,47 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
-    console.log("Login data:", data);
 
-    // Mock API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // For this example, we'll just check for a mock user
-    if (data.email === "user@example.com" && data.password === "password") {
-       toast({
-        title: "Login Successful",
-        description: "Welcome back!",
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
-      router.push("/dashboard");
-    } else {
-       toast({
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Store the token using AuthClient
+        AuthClient.setToken(result.data.token);
+        
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${result.data.user.name || result.data.user.email}!`,
+        });
+        
+        router.push("/dashboard");
+      } else {
+        // Handle API error response
+        const errorMessage = result.error?._form?.[0] || result.error?.message || "Login failed. Please try again.";
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: errorMessage,
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
         variant: "destructive",
         title: "Login Failed",
-        description: "Invalid email or password. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   return (

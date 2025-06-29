@@ -18,22 +18,19 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CategoryForm } from "@/components/categories/category-form";
 import { CategoryList } from "@/components/categories/category-list";
-import { addCategoryAction, updateCategoryAction, deleteCategoryAction } from "@/lib/actions";
+import { CategoriesApi } from "@/lib/categories-api";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PaginationControls } from "@/components/ui/pagination";
 
-interface CategoriesPageClientProps {
-  initialCategories: Category[];
-}
-
 const ITEMS_PER_PAGE = 10;
 
-export function CategoriesPageClient({ initialCategories }: CategoriesPageClientProps) {
+export function CategoriesPageClient() {
   const router = useRouter();
   const { toast } = useToast();
-  const [categories, setCategories] = React.useState(initialCategories);
+  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -42,14 +39,29 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
   const [categoryToDelete, setCategoryToDelete] = React.useState<Category | null>(null);
   const [currentPage, setCurrentPage] = React.useState(1);
 
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      const data = await CategoriesApi.getCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch categories. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   React.useEffect(() => {
-    setCategories(initialCategories);
-    setCurrentPage(1); 
-  }, [initialCategories]);
+    fetchCategories();
+  }, []);
 
   const handleCategoryUpdate = () => {
-    router.refresh();
+    fetchCategories();
     setCurrentPage(1);
   };
 
@@ -78,38 +90,34 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
   const handleDeleteCategory = async () => {
     if (!categoryToDelete) return;
 
-    const result = await deleteCategoryAction(categoryToDelete.id);
-    if (result.success) {
+    try {
+      await CategoriesApi.deleteCategory(categoryToDelete.id);
       toast({ title: "Success", description: "Category deleted successfully." });
       handleCategoryUpdate();
-    } else {
-      toast({ variant: "destructive", title: "Error", description: result.error || "Failed to delete category." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to delete category." });
     }
     setCategoryToDelete(null); 
   };
 
-
-  const handleSubmitForm = async (data: any) => { 
-    const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('type', data.type);
-    
-    let result;
-    if (editingCategory) {
-      result = await updateCategoryAction(editingCategory.id, formData);
-    } else {
-      result = await addCategoryAction(formData);
-    }
-
-    if (result.success) {
-      toast({ title: "Success", description: `Category ${editingCategory ? 'updated' : 'added'} successfully.` });
+  const handleSubmitForm = async (data: { name: string; type: 'income' | 'expense' | 'general'; icon?: string }) => { 
+    try {
+      if (editingCategory) {
+        await CategoriesApi.updateCategory(editingCategory.id, data);
+        toast({ title: "Success", description: "Category updated successfully." });
+      } else {
+        await CategoriesApi.createCategory(data);
+        toast({ title: "Success", description: "Category added successfully." });
+      }
+      
       handleCategoryUpdate();
       setIsFormOpen(false);
       setEditingCategory(null);
       return { success: true };
-    } else {
-      toast({ variant: "destructive", title: "Error", description: (typeof result.error === 'string' ? result.error : result.error?._form?.join(', ')) || "Failed to save category." });
-      return { success: false, error: result.error };
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to save category.";
+      toast({ variant: "destructive", title: "Error", description: errorMessage });
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -276,5 +284,3 @@ export function CategoriesPageClient({ initialCategories }: CategoriesPageClient
     </div>
   );
 }
-
-    

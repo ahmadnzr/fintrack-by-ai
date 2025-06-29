@@ -18,68 +18,115 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Transaction, Category } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { TransactionForm } from "@/components/transactions/transaction-form";
-import { addTransactionAction } from "@/lib/actions";
+import { TransactionsApi } from "@/lib/transactions-api";
+import { CategoriesApi } from "@/lib/categories-api";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { PaginationControls } from "@/components/ui/pagination";
 
-interface TransactionsPageClientProps {
-  initialTransactions: Transaction[];
-  initialCategories: Category[];
-}
-
 const ITEMS_PER_PAGE = 10;
 
-export function TransactionsPageClient({ initialTransactions, initialCategories }: TransactionsPageClientProps) {
+export function TransactionsPageClient() {
   const router = useRouter();
   const { toast } = useToast();
-  const [transactions, setTransactions] = React.useState(initialTransactions);
-  const [categories] = React.useState(initialCategories);
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [filterCategory, setFilterCategory] = React.useState<string>("all");
   const [currentTab, setCurrentTab] = React.useState<"all" | "income" | "expense">("all");
   const [currentPage, setCurrentPage] = React.useState(1);
 
-  const handleTransactionUpdate = () => {
-    router.refresh();
-    setCurrentPage(1); 
+  const fetchTransactions = async () => {
+    try {
+      setIsLoading(true);
+      const data = await TransactionsApi.getAllTransactions();
+      setTransactions(data);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch transactions. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await CategoriesApi.getCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch categories. Please try again.",
+      });
+    }
   };
 
   React.useEffect(() => {
-    setTransactions(initialTransactions);
-    setCurrentPage(1); // Reset to first page when initial transactions change
-  }, [initialTransactions]);
+    fetchTransactions();
+    fetchCategories();
+  }, []);
 
-  const handleSubmitNewTransaction = async (data: any) => {
-    const formData = new FormData();
-    formData.append('date', data.date.toISOString());
-    formData.append('description', data.description);
-    formData.append('amount', data.amount.toString());
-    formData.append('category', data.category);
-    formData.append('type', data.type);
-    if (data.attachmentUrl) formData.append('attachmentUrl', data.attachmentUrl);
-    if (data.tags) formData.append('tags', data.tags);
+  const handleTransactionUpdate = () => {
+    fetchTransactions();
+    setCurrentPage(1); 
+  };
 
-    const result = await addTransactionAction(formData);
-    if (result.success) {
+  const handleSubmitNewTransaction = async (data: {
+    date: Date;
+    description: string;
+    amount: number;
+    category: string;
+    type: 'income' | 'expense';
+    attachmentUrl?: string;
+    tags?: string; // comma-separated string from form
+  }) => {
+    try {
+      // Find the category ID from the category name
+      const selectedCategory = categories.find(cat => cat.name === data.category);
+      if (!selectedCategory) {
+        throw new Error('Selected category not found');
+      }
+
+      const transactionData = {
+        date: data.date.toISOString(),
+        description: data.description,
+        amount: data.amount,
+        category: selectedCategory.id, // Use categoryId for API
+        type: data.type,
+        attachmentUrl: data.attachmentUrl,
+        tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : undefined,
+      };
+
+      await TransactionsApi.createTransaction(transactionData);
       toast({ title: "Success", description: "Transaction added successfully." });
       handleTransactionUpdate();
       setIsFormOpen(false);
       return { success: true };
-    } else {
-      toast({ variant: "destructive", title: "Error", description: (typeof result.error === 'string' ? result.error : result.error?._form?.join(', ')) || "Failed to add transaction." });
-      return { success: false, error: result.error };
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to add transaction.";
+      toast({ variant: "destructive", title: "Error", description: errorMessage });
+      return { success: false, error: errorMessage };
     }
   };
 
   const filteredTransactions = React.useMemo(() => {
     return transactions.filter(transaction => {
+      const categoryName = transaction.category?.name || '';
+      const tagNames = transaction.tags?.map(tag => tag.name) || [];
+      
       const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            transaction.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            (transaction.tags && transaction.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
+                            categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            tagNames.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesType = currentTab === "all" || transaction.type === currentTab;
-      const matchesCategoryFilter = filterCategory === "all" || transaction.category === filterCategory;
+      const matchesCategoryFilter = filterCategory === "all" || categoryName === filterCategory;
       
       return matchesSearch && matchesType && matchesCategoryFilter;
     });
@@ -87,9 +134,12 @@ export function TransactionsPageClient({ initialTransactions, initialCategories 
   
   const uniqueCategories = React.useMemo(() => {
     const catSet = new Set<string>();
-    initialTransactions.forEach(t => catSet.add(t.category)); // Use initial to get all possible categories
+    transactions.forEach(t => {
+      const categoryName = t.category?.name || '';
+      if (categoryName) catSet.add(categoryName);
+    });
     return Array.from(catSet).sort();
-  }, [initialTransactions]);
+  }, [transactions]);
 
   const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
   const paginatedTransactions = filteredTransactions.slice(

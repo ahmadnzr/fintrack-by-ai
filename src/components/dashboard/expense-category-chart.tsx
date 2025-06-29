@@ -40,7 +40,8 @@ export function ExpenseCategoryChart({ transactions, reportDateISO }: ExpenseCat
         return t.type === "expense" && transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
       })
       .forEach((transaction) => {
-        categoryTotals[transaction.category] = (categoryTotals[transaction.category] || 0) + transaction.amount;
+        const categoryName = transaction.category.name;
+        categoryTotals[categoryName] = (categoryTotals[categoryName] || 0) + Number(transaction.amount);
       });
     
     return Object.entries(categoryTotals)

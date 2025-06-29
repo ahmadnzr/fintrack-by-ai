@@ -33,9 +33,9 @@ export function IncomeExpenseChart({ transactions, filterStartDateISO }: IncomeE
         monthlyTotals[monthYear] = { income: 0, expenses: 0 };
       }
       if (transaction.type === "income") {
-        monthlyTotals[monthYear].income += transaction.amount;
+        monthlyTotals[monthYear].income += Number(transaction.amount);
       } else {
-        monthlyTotals[monthYear].expenses += transaction.amount;
+        monthlyTotals[monthYear].expenses += Number(transaction.amount);
       }
     });
     
