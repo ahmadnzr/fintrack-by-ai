@@ -1,0 +1,280 @@
+### Variables
+@baseUrl = http://localhost:9002
+@token = your-jwt-token-here
+
+###############################################################################
+# AUTHENTICATION ENDPOINTS
+###############################################################################
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### Register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "password123",
+  "name": "John Doe"
+}
+
+###############################################################################
+# TRANSACTION ENDPOINTS
+###############################################################################
+
+### Get all transactions
+GET {{baseUrl}}/api/transactions
+Authorization: Bearer {{token}}
+
+### Get transactions with filters
+GET {{baseUrl}}/api/transactions?type=expense&category=food&search=lunch&page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Get transactions by type only
+GET {{baseUrl}}/api/transactions?type=income
+Authorization: Bearer {{token}}
+
+### Create new transaction (Income)
+POST {{baseUrl}}/api/transactions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "date": "2024-01-15T10:30:00.000Z",
+  "description": "Salary payment",
+  "amount": 5000000,
+  "category": "salary",
+  "type": "income",
+  "tags": ["monthly", "salary"]
+}
+
+### Create new transaction (Expense)
+POST {{baseUrl}}/api/transactions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "date": "2024-01-15T12:30:00.000Z",
+  "description": "Lunch at restaurant",
+  "amount": 150000,
+  "category": "food",
+  "type": "expense",
+  "tags": ["food", "restaurant"]
+}
+
+### Get transaction by ID
+GET {{baseUrl}}/api/transactions/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer {{token}}
+
+### Update transaction
+PUT {{baseUrl}}/api/transactions/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "date": "2024-01-15T12:30:00.000Z",
+  "description": "Updated lunch description",
+  "amount": 175000,
+  "category": "food",
+  "type": "expense",
+  "tags": ["food", "restaurant", "updated"]
+}
+
+### Delete transaction
+DELETE {{baseUrl}}/api/transactions/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer {{token}}
+
+###############################################################################
+# CATEGORY ENDPOINTS
+###############################################################################
+
+### Get all categories
+GET {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+
+### Get categories with filters
+GET {{baseUrl}}/api/categories?type=expense&isCustom=true&search=food
+Authorization: Bearer {{token}}
+
+### Get categories by type
+GET {{baseUrl}}/api/categories?type=income
+Authorization: Bearer {{token}}
+
+### Create new category
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Freelance Work",
+  "type": "income"
+}
+
+### Create expense category
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Online Shopping",
+  "type": "expense"
+}
+
+### Get category by ID
+GET {{baseUrl}}/api/categories/550e8400-e29b-41d4-a716-446655440001
+Authorization: Bearer {{token}}
+
+### Update category
+PUT {{baseUrl}}/api/categories/550e8400-e29b-41d4-a716-446655440001
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Category Name",
+  "type": "expense"
+}
+
+### Delete category
+DELETE {{baseUrl}}/api/categories/550e8400-e29b-41d4-a716-446655440001
+Authorization: Bearer {{token}}
+
+###############################################################################
+# FINANCIAL INSIGHTS ENDPOINTS
+###############################################################################
+
+### Generate financial insights
+POST {{baseUrl}}/api/insights/financial
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "income": [
+    {
+      "date": "2024-01-01T00:00:00.000Z",
+      "description": "Salary",
+      "amount": 5000000,
+      "category": "salary"
+    },
+    {
+      "date": "2024-01-15T00:00:00.000Z",
+      "description": "Freelance project",
+      "amount": 2000000,
+      "category": "freelance"
+    }
+  ],
+  "expenses": [
+    {
+      "date": "2024-01-02T00:00:00.000Z",
+      "description": "Groceries",
+      "amount": 500000,
+      "category": "food"
+    },
+    {
+      "date": "2024-01-03T00:00:00.000Z",
+      "description": "Transportation",
+      "amount": 200000,
+      "category": "transport"
+    }
+  ]
+}
+
+### Generate insights (minimal data)
+POST {{baseUrl}}/api/insights/financial
+Authorization: Bearer {{token}}
+
+###############################################################################
+# USER SETTINGS ENDPOINTS
+###############################################################################
+
+### Get user settings
+GET {{baseUrl}}/api/user/settings
+Authorization: Bearer {{token}}
+
+### Update user settings
+PUT {{baseUrl}}/api/user/settings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "theme": "dark",
+  "language": "id"
+}
+
+### Update settings (light theme, English)
+PUT {{baseUrl}}/api/user/settings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "theme": "light",
+  "language": "en"
+}
+
+###############################################################################
+# EXPORT ENDPOINTS
+###############################################################################
+
+### Export transactions as PDF
+GET {{baseUrl}}/api/export/transactions?format=pdf
+Authorization: Bearer {{token}}
+
+### Export transactions as Excel
+GET {{baseUrl}}/api/export/transactions?format=excel
+Authorization: Bearer {{token}}
+
+### Export transactions with date filter (PDF)
+GET {{baseUrl}}/api/export/transactions?format=pdf&startDate=2024-01-01T00:00:00.000Z&endDate=2024-01-31T23:59:59.999Z
+Authorization: Bearer {{token}}
+
+### Export transactions with type filter (Excel)
+GET {{baseUrl}}/api/export/transactions?format=excel&type=expense&startDate=2024-01-01T00:00:00.000Z&endDate=2024-01-31T23:59:59.999Z
+Authorization: Bearer {{token}}
+
+###############################################################################
+# TESTING SCENARIOS
+###############################################################################
+
+### Test invalid transaction (missing required fields)
+POST {{baseUrl}}/api/transactions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Invalid transaction",
+  "amount": 100000
+}
+
+### Test invalid category (duplicate name)
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Food",
+  "type": "expense"
+}
+
+### Test unauthorized request (no token)
+GET {{baseUrl}}/api/transactions
+
+### Test invalid token
+GET {{baseUrl}}/api/transactions
+Authorization: Bearer invalid-token-here
+
+###############################################################################
+# NOTES
+###############################################################################
+
+# 1. Replace {{token}} with actual JWT token received from login
+# 2. Replace UUIDs in path parameters with actual IDs from your database
+# 3. Adjust dates to current/relevant dates for testing
+# 4. Some endpoints may require existing data in database
+# 5. Export endpoints will download files - check your browser downloads
+# 6. Financial insights endpoint requires transaction data to generate meaningful insights
